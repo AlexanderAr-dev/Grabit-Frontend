@@ -20,8 +20,8 @@ export default tseslint.config(
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       'prettier': prettier,
-      'boundaries': boundaries,
       'simple-import-sort': simpleImportSort,
+      'boundaries': boundaries,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -64,19 +64,28 @@ export default tseslint.config(
           'default': 'allow',
           'rules': [
             {
-              'from': 'shared',
+              'from': 'ui',
               'disallow': [
-                'app',
+                'pages',
+                'modules',
+                'components'
+              ],
+              'message': 'import in ui scope from pages, modules, components is forbidden'
+            },
+            {
+              'from': 'components',
+              'disallow': [
+                'pages',
                 'modules',
               ],
-              'message': 'import in shared scope from app, modules is forbidden'
+              'message': 'import in components scope from pages, modules is forbidden'
             },
             {
               'from': 'modules',
               'disallow': [
-                'app',
+                'pages',
               ],
-              'message': 'import in modules scope from app is forbidden'
+              'message': 'import in modules scope from pages is forbidden'
             },
           ]
         }
@@ -86,79 +95,7 @@ export default tseslint.config(
         'warn', {
           endOfLine: 'auto'
         }
-      ],
-      '@typescript-eslint/naming-convention': [
-        'error',
-        {
-          selector: 'typeAlias',
-          format: ['PascalCase'],
-        },
-        {
-          selector: 'class',
-          format: ['PascalCase'],
-        },
-        {
-          selector: 'classProperty',
-          modifiers: ['public', 'protected'],
-          format: ['camelCase'],
-        },
-        {
-          selector: 'classProperty',
-          modifiers: ['static'],
-          format: ['PascalCase'],
-        },
-        {
-          selector: 'classProperty',
-          modifiers: ['static', 'private'],
-          format: ['PascalCase'],
-        },
-        {
-          selector: 'classProperty',
-          modifiers: ['private'],
-          format: ['camelCase'],
-          prefix: ['_']
-        },
-        {
-          selector: 'method',
-          format: ['camelCase'],
-        },
-        {
-          selector: 'variable',
-          format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
-        },
-        {
-          selector: 'objectLiteralMethod',
-          format: ['camelCase', 'UPPER_CASE']
-        },
-        {
-          selector: 'objectLiteralProperty',
-          format: ['camelCase', 'UPPER_CASE']
-        },
-        {
-          selector: 'typeMethod',
-          format: ['camelCase']
-        },
-        {
-          selector: 'typeParameter',
-          format: ['UPPER_CASE', 'PascalCase'],
-        },
-        {
-          selector: 'typeProperty',
-          format: ['camelCase']
-        }
-      ],
-      "lines-between-class-members": [
-        "error",
-        {
-          enforce: [
-            {
-              blankLine: "always",
-              prev: "method",
-              next: "method"
-            },
-          ]
-        }
-      ],
+      ]
     },
     settings: {
       'boundaries/elements': [
@@ -167,12 +104,20 @@ export default tseslint.config(
           'pattern': 'src/app/**'
         },
         {
-          'type': 'shared',
-          'pattern': 'src/shared/**'
+          'type': 'ui',
+          'pattern': 'src/ui/**'
+        },
+        {
+          'type': 'components',
+          'pattern': 'src/components/**'
         },
         {
           'type': 'modules',
           'pattern': 'src/modules/**'
+        },
+        {
+          'type': 'pages',
+          'pattern': 'src/pages/**'
         },
       ],
       'import/resolver': {
