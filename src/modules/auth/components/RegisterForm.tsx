@@ -7,8 +7,10 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useProfileRegister } from '@modules/auth/hooks/useRegister.ts';
 
 export const RegisterForm = () => {
+  const profileRegister = useProfileRegister();
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: { email: '', password: '', login: '' },
@@ -49,7 +51,11 @@ export const RegisterForm = () => {
       >
         <h1>Регистрация</h1>
       </Text>
-      <form onSubmit={form.onSubmit(console.log)}>
+      <form
+        onSubmit={form.onSubmit(values => {
+          profileRegister.mutate(values);
+        })}
+      >
         <TextInput
           c={'white'}
           mt="lg"

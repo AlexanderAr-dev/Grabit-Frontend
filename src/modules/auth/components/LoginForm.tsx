@@ -1,24 +1,25 @@
-import {
-  Button,
-  Container,
-  PasswordInput,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Container, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useProfileLogin } from '@modules/auth/hooks/useLogin.ts';
+import { Button, PageHeader } from '@ui';
+import { Input } from '@ui/Input';
+import { Label } from '@ui/Label.tsx';
 
 export const LoginForm = () => {
+  const profileLogin = useProfileLogin();
+
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: { email: '', password: '' },
-
     validate: {
       password: value =>
         value.length < 8
-          ? 'Login must have at least 8 letters'
+          ? 'Пароль должен содержать минимум 8 символов'
           : null,
       email: value =>
-        /^\S+@\S+$/.test(value) ? null : 'Invalid email',
+        /^\S+@\S+$/.test(value)
+          ? null
+          : 'Неверный формат email',
     },
   });
 
@@ -32,52 +33,43 @@ export const LoginForm = () => {
         padding: '0px 25px 20px 25px',
       }}
     >
-      <Text
-        c={'white'}
-        style={{
-          textAlign: 'center',
-          marginTop: '20px',
-          marginBottom: '20px',
-        }}
+      <PageHeader title={'Вход'} />
+
+      <form
+        onSubmit={form.onSubmit(values => {
+          profileLogin.mutate(values);
+        })}
       >
-        <h1>Вход</h1>
-      </Text>
-      <form onSubmit={form.onSubmit(console.log)}>
-        <TextInput
-          c={'white'}
+        <Input
           mt="lg"
-          label={<Text size="lg">Почта</Text>}
+          label={'Почта'}
           placeholder="Email"
           key={form.key('email')}
           {...form.getInputProps('email')}
         />
-        <PasswordInput
-          c={'white'}
+
+        <Input
+          type="password"
           mt="lg"
-          label={<Text size="lg">Пароль</Text>}
+          label={'Пароль'}
+          placeholder="Пароль"
           key={form.key('password')}
           {...form.getInputProps('password')}
         />
+
         <Button
           type="submit"
+          variant="primary"
           mt={40}
-          bg={'#EA9432'}
           w="100%"
         >
           <Text size="lg">Войти</Text>
         </Button>
       </form>
-      <Text
-        size={'xl'}
-        c={'white'}
-        style={{
-          textAlign: 'center',
-          marginTop: '70px',
-        }}
-      >
-        Еще нет аккаунта?
-      </Text>
-      <Button bg={'#667291'} w="100%">
+
+      <Label title={'Еще нет аккаунта?'} mt={70} />
+
+      <Button variant="secondary" w="100%" mt="md">
         <Text size="lg">Создать аккаунт</Text>
       </Button>
     </Container>

@@ -12,4 +12,5 @@ export type NavItemType = {
   href: string;
   icon: FC<IconProps>;
   color?: string;
+  isActive?: boolean;
 };

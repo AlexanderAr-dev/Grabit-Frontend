@@ -6,11 +6,11 @@ import {
   IconSearch,
 } from '@tabler/icons-react';
 
-export const pagesAndIcons: NavItemType[] = [
+export const navigationItems: NavItemType[] = [
   {
     title: 'Поиск',
     icon: IconSearch,
-    href: '/search',
+    href: '/',
     color: '#FF8104',
   },
   {
@@ -22,7 +22,7 @@ export const pagesAndIcons: NavItemType[] = [
   {
     title: 'Аренда',
     icon: IconClockHour4Filled,
-    href: '/rent',
+    href: '/rentals-page',
     color: 'white',
   },
   {
