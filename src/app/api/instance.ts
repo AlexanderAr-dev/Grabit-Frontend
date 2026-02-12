@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API_URL = 'https://my-json-server.typicode.com/AlexanderAr-dev/mock-auth-api'
+export const API_URL = 'https://my-json-server.typicode.com/AlexanderAr-dev/mock-api'
 
 export const api = axios.create({
   withCredentials: true,

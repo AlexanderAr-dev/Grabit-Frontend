@@ -1,10 +1,10 @@
 import { FC } from 'react';
-import { ICardPreview } from '@app-types';
+import { CardPreview } from '@app-types';
 import { MediumCard, SearchInput } from '@components';
 import { Container, Flex, SimpleGrid } from '@mantine/core';
 import { Button } from '@ui';
 
-const mockCards: ICardPreview[] = [
+const mockCards: CardPreview[] = [
   {
     id: '1',
     title: 'Ремонт',
@@ -33,7 +33,7 @@ const mockCards: ICardPreview[] = [
     createdAt: '2 часа назад',
     category: { id: 2, name: 'services' },
     previewImage:
-      'https://avatars.dzeninfra.ru/get-zen_doc/271828/pub_6672b69ac44ca74a3aa7ded9_6672b7d4867ea0000933d652/scale_1200',
+      'https://static.insales-cdn.com/images/articles/1/2818/7514882/metody-proverki-kachestva-uborki.jpg',
   },
 ];
 

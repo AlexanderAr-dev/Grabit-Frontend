@@ -1,5 +1,6 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { UserCard } from '../app/testTypes/UserCard.ts';
 import {
   ActionIcon,
   Card,
@@ -12,19 +13,23 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { IconSend } from '@tabler/icons-react';
+import { IMediaType } from '@app-types/IMediaType.ts';
 
 interface Message {
   id: string;
   text: string;
-  sender: 'user' | 'other';
-  timestamp: string;
-  name?: string;
+  date: string;
+  isRead: boolean;
+  isReceive: boolean;
+  userId: number;
+  media: IMediaType[];
 }
 
 interface Chat {
   id: string;
-  name: string;
-  preview: string;
+  talker: UserCard;
+  adName: string;
+  lastMessageDate: string;
   messages: Message[];
 }
 
@@ -56,102 +61,6 @@ const cardTheme = {
 };
 
 // Моковые данные для 4 чатов
-const mockChats: Chat[] = [
-  {
-    id: '1',
-    name: 'Thomas Selby',
-    preview: 'Как состояние недвижимости?',
-    messages: [
-      {
-        id: '1-1',
-        text: 'Как состояние недвижимости?',
-        sender: 'other',
-        timestamp: '14:24',
-        name: 'Thomas Selby',
-      },
-      {
-        id: '1-2',
-        text: 'Понятно, спасибо за информацию!',
-        sender: 'user',
-        timestamp: '14:30',
-      },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Selby Thomas',
-    preview: 'Это точно круто. Тебе понравится',
-    messages: [
-      {
-        id: '2-1',
-        text: 'Это точно круто. Тебе понравится',
-        sender: 'other',
-        timestamp: '14:25',
-        name: 'Selby Thomas',
-      },
-      {
-        id: '2-2',
-        text: 'Спасибо, что связались со мной!',
-        sender: 'user',
-        timestamp: '14:31',
-      },
-      {
-        id: '2-3',
-        text: 'До свидания',
-        sender: 'other',
-        timestamp: '14:32',
-        name: 'Selby Thomas',
-      },
-    ],
-  },
-  {
-    id: '3',
-    name: 'John Smith',
-    preview: 'Привет, ты доступен?',
-    messages: [
-      {
-        id: '3-1',
-        text: 'Привет, ты доступен?',
-        sender: 'other',
-        timestamp: '14:26',
-        name: 'John Smith',
-      },
-      {
-        id: '3-2',
-        text: 'Да, чем могу помочь?',
-        sender: 'user',
-        timestamp: '14:33',
-      },
-      {
-        id: '3-3',
-        text: 'У меня вопрос по услуге',
-        sender: 'other',
-        timestamp: '14:34',
-        name: 'John Smith',
-      },
-    ],
-  },
-  {
-    id: '4',
-    name: 'Alice Johnson',
-    preview: 'Спасибо за вашу помощь!',
-    messages: [
-      {
-        id: '4-1',
-        text: 'Спасибо за вашу помощь!',
-        sender: 'other',
-        timestamp: '14:27',
-        name: 'Alice Johnson',
-      },
-      {
-        id: '4-2',
-        text: 'Пожалуйста!',
-        sender: 'user',
-        timestamp: '14:35',
-      },
-    ],
-  },
-];
 
 const MessageBubble: FC<{ message: Message }> = ({
   message,

@@ -1,10 +1,10 @@
 import { api } from '@api/instance.ts';
-import { IUser } from '@app-types/IUser';
+import { IUserInfo } from '@app-types/IUserInfo.ts';
 import { AxiosResponse } from 'axios';
 
 export class UserService {
   static async infoUser(): Promise<
-    AxiosResponse<{ data: IUser } & { message: string }>
+    AxiosResponse<{ data: IUserInfo } & { message: string }>
   > {
     return api.get('/user');
   }

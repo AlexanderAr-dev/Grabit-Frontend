@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-export interface RouterType {
+export interface IRouterType {
   path: string;
   component: ReactNode;
 }

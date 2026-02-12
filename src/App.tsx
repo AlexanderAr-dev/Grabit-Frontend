@@ -1,6 +1,5 @@
 import { FC } from 'react';
 import { MainLayout } from '@components';
-import { MantineProvider } from '@mantine/core';
 import {
   QueryClient,
   QueryClientProvider,
@@ -10,9 +9,7 @@ const App: FC = () => {
   const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineProvider>
-        <MainLayout />
-      </MantineProvider>
+      <MainLayout />
     </QueryClientProvider>
   );
 };

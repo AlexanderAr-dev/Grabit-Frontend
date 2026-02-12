@@ -7,7 +7,7 @@ interface IconProps {
   [key: string]: unknown;
 }
 
-export type NavItemType = {
+export type INavItem = {
   title: string;
   href: string;
   icon: FC<IconProps>;

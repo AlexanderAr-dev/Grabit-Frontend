@@ -46,7 +46,7 @@ export const RentalsPage: FC = () => {
       phone: '+8 777 777 77 77',
       service: 'Ремонт ноутбука',
       previewImage:
-        'https://avatars.dzeninfra.ru/get-zen_doc/271828/pub_6672b69ac44ca74a3aa7ded9_6672b7d4867ea0000933d652/scale_1200',
+        'https://avatars.mds.yandex.net/get-ydo/9712213/2a0000018af193257f69a5b298dd089f38d4/diploma',
     },
     {
       id: '4',

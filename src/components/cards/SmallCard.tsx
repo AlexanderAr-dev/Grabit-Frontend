@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { ICardPreview } from '@app-types';
+import { IRentalItem } from '@app-types';
 import { componentsTheme } from '@constants';
 import {
   Card,
@@ -10,23 +10,28 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 
-interface CardProps extends ICardPreview {
+interface SmallCardProps extends IRentalItem {
   variant?: 'primary';
 }
 
-export const SmallCard: FC<CardProps> = ({
+export const SmallCard: FC<SmallCardProps> = ({
   variant = 'primary',
-  title,
-  price,
-  location,
-  rating,
   previewImage,
-  createdAt,
+  title,
+  rating,
+  cost,
+  address,
+  createdDate,
 }) => {
   const { colorScheme } = useMantineColorScheme();
   const themeStyles =
     componentsTheme.cardTheme[colorScheme];
   const variantStyles = themeStyles[variant];
+
+  // Форматирование цены
+  const priceText = cost
+    ? `${cost.payment} ₽/${cost.priceUnit}`
+    : 'Цена не указана';
 
   return (
     <Card
@@ -42,7 +47,9 @@ export const SmallCard: FC<CardProps> = ({
     >
       <Card.Section>
         <Image
-          src={previewImage}
+          src={
+            previewImage?.url || '/placeholder-image.jpg'
+          } // Добавлен fallback для изображения
           height={200}
           alt={title}
         />
@@ -54,12 +61,17 @@ export const SmallCard: FC<CardProps> = ({
           align="center"
           mb="xs"
         >
-          <Rating value={rating} readOnly color="yellow" />
+          <Rating
+            value={rating || 0}
+            readOnly
+            color="yellow"
+          />
           <Text
             size="sm"
             c={colorScheme === 'dark' ? 'gray.4' : 'gray.6'}
           >
-            {createdAt}
+            {createdDate}{' '}
+            {/* Изменено с createdAt на createdDate */}
           </Text>
         </Group>
 
@@ -77,13 +89,14 @@ export const SmallCard: FC<CardProps> = ({
           mb={2}
           c={variantStyles.text}
         >
-          {price}
+          {priceText}{' '}
+          {/* Используем отформатированную цену */}
         </Text>
         <Text
           size="sm"
           c={colorScheme === 'dark' ? 'gray.4' : 'gray.6'}
         >
-          {location}
+          {address} {/* Изменено с location на address */}
         </Text>
       </div>
     </Card>

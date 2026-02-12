@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
-import { IUser } from '@app-types';
+import { useState } from 'react';
+import { IUserInfo } from '@app-types';
 import {
   ActionIcon,
   Avatar,
-  Badge,
   Button,
   Card,
   Container,
@@ -16,7 +15,6 @@ import {
   Text,
   TextInput,
   Title,
-  Loader,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
@@ -25,82 +23,61 @@ import {
   IconMessage,
   IconStar,
 } from '@tabler/icons-react';
-import { UserService } from '@api/services/userService';
+
+// Предзаписанные данные пользователя
+const MOCK_USER_DATA: IUserInfo = {
+  id: 1,
+  email: 'test@example.com',
+  login: 'testuser',
+  isVerified: false,
+  language: 'ru',
+  avatar: {
+    id: 1,
+    url: 'https://reqres.in/img/faces/1-image.jpg',
+  },
+  phoneNumber: '89130000000',
+  name: 'Тестовый Пользователь',
+  description: 'Это тестовый пользователь для демонстрации',
+  stats: {
+    reviews: 15,
+    rating: 4.8,
+    offers: 7,
+  },
+};
 
 export const Profile = () => {
-  const [user, setUser] = useState<IUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Используем предзаписанные данные
+  const [user, setUser] =
+    useState<IUserInfo>(MOCK_USER_DATA);
   const [opened, { open, close }] = useDisclosure(false);
   const [editForm, setEditForm] = useState({
-    name: '',
-    description: '',
+    name: MOCK_USER_DATA.name,
+    description: MOCK_USER_DATA.description || '',
   });
 
-  // Загружаем данные пользователя из мока
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true);
-        const response = await UserService.infoUser();
-        const userData = response.data.data;
-        setUser(userData);
-        setEditForm({
-          name: userData.name,
-          description: userData.description,
-        });
-      } catch (err) {
-        setError('Ошибка загрузки данных пользователя');
-        console.error('Error fetching user:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
   const handleSave = () => {
-    if (user) {
-      setUser({
-        ...user,
-        name: editForm.name,
-        description: editForm.description,
-      });
-      close();
-    }
+    // Обновляем данные пользователя
+    setUser({
+      ...user,
+      name: editForm.name,
+      description: editForm.description,
+    });
+    close();
   };
 
-  // Показываем загрузку
-  if (loading) {
-    return (
-      <Container size="sm" py="xl" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <Loader size="lg" />
-      </Container>
-    );
-  }
+  // Функция для выхода из аккаунта
+  const handleLogout = () => {
+    // Здесь должна быть логика выхода
+    console.log('Выход из аккаунта');
+    // Например, очистка токена, редирект на главную и т.д.
+  };
 
-  // Показываем ошибку
-  if (error) {
-    return (
-      <Container size="sm" py="xl">
-        <Text c="red" size="lg" ta="center">
-          {error}
-        </Text>
-      </Container>
-    );
-  }
-
-  // Если данные не загрузились
-  if (!user) {
-    return (
-      <Container size="sm" py="xl">
-        <Text c="dimmed" size="lg" ta="center">
-          Данные пользователя не найдены
-        </Text>
-      </Container>
-    );
-  }
+  // Функция для просмотра отзывов
+  const handleViewReviews = () => {
+    // Здесь должна быть логика перехода к отзывам
+    console.log('Переход к отзывам');
+    // Например, навигация на страницу отзывов
+  };
 
   return (
     <>
@@ -125,7 +102,11 @@ export const Profile = () => {
           <Avatar
             size={120}
             radius="md"
-            src={user.avatar || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80"}
+            src={
+              user.avatar?.url ||
+              'https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1180&q=80'
+            }
+            alt={user.name}
           />
         </Group>
 
@@ -211,6 +192,7 @@ export const Profile = () => {
               variant="subtle"
               size="lg"
               onClick={open}
+              aria-label="Редактировать профиль"
             >
               <IconEdit size={18} />
             </ActionIcon>
@@ -221,17 +203,41 @@ export const Profile = () => {
               <Text fw={500} w={80}>
                 Логин:
               </Text>
-              <Badge variant="light" color="blue">
-                {user.login}
-              </Badge>
+              <Text>{user.login}</Text>
             </Group>
             <Group>
               <Text fw={500} w={80}>
                 Почта:
               </Text>
-              <Badge variant="light" color="gray">
-                {user.email}
-              </Badge>
+              <Text>{user.email}</Text>
+            </Group>
+            {user.phoneNumber && (
+              <Group>
+                <Text fw={500} w={80}>
+                  Телефон:
+                </Text>
+                <Text>{user.phoneNumber}</Text>
+              </Group>
+            )}
+            <Group>
+              <Text fw={500} w={80}>
+                Статус:
+              </Text>
+              <Text>
+                {user.isVerified
+                  ? 'Подтвержден'
+                  : 'Не подтвержден'}
+              </Text>
+            </Group>
+            <Group>
+              <Text fw={500} w={80}>
+                Язык:
+              </Text>
+              <Text>
+                {user.language === 'ru'
+                  ? 'Русский'
+                  : user.language}
+              </Text>
             </Group>
           </Stack>
         </Paper>
@@ -243,6 +249,7 @@ export const Profile = () => {
             color="red"
             leftSection={<IconLogout size={16} />}
             fullWidth
+            onClick={handleLogout}
           >
             Выйти из аккаунта
           </Button>
@@ -251,6 +258,7 @@ export const Profile = () => {
             variant="filled"
             leftSection={<IconMessage size={16} />}
             fullWidth
+            onClick={handleViewReviews}
           >
             Посмотреть отзывы
           </Button>
@@ -274,6 +282,7 @@ export const Profile = () => {
                 name: e.target.value,
               })
             }
+            placeholder="Введите ваше имя"
           />
           <TextInput
             label="Описание"
@@ -284,6 +293,7 @@ export const Profile = () => {
                 description: e.target.value,
               })
             }
+            placeholder="Расскажите о себе"
           />
           <Group justify="flex-end">
             <Button variant="outline" onClick={close}>

@@ -17,7 +17,7 @@ export const MainLayout = () => {
       <AppShell.Main
         style={{ backgroundColor: background.primary }}
       >
-        <Container size={800}>
+        <Container size={865}>
           <Routing routes={routes} />
         </Container>
       </AppShell.Main>

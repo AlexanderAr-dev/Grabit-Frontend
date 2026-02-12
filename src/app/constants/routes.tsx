@@ -1,4 +1,4 @@
-import { RouterType } from '@app-types/routerType.ts';
+import { IRouterType } from '@app-types/IRouterType.ts';
 import {
   ChatPage,
   LoginPage,
@@ -11,8 +11,9 @@ import {
   UserChatsPage,
   UserRentPage,
 } from '@pages';
+import { RentPage } from '@pages/RentPage.tsx';
 
-export const routes: RouterType[] = [
+export const routes: IRouterType[] = [
   { path: '/test-home', component: <TestHome /> },
   { path: '/login', component: <LoginPage /> },
   { path: '/register', component: <RegisterPage /> },
@@ -23,4 +24,5 @@ export const routes: RouterType[] = [
   { path: '/chats', component: <UserChatsPage /> },
   { path: '/chats/:chatId', component: <ChatPage /> },
   { path: '/rentals-page', component: <RentalsPage /> },
+  { path: '/rent-page', component: <RentPage /> },
 ];

@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { ICardPreview } from '@app-types';
+import { CardPreview } from '@app-types';
 import { componentsTheme } from '@constants';
 import {
   Card,
@@ -11,7 +11,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 
-interface CardProps extends ICardPreview {
+interface CardProps extends CardPreview {
   variant?: 'primary';
 }
 
