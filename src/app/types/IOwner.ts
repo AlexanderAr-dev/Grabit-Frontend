@@ -1,17 +1,9 @@
+import { IMediaType } from '@app-types/IMediaType.ts';
+
 export interface IOwner {
   id: number;
-
+  name: string;
+  rating: number;
+  reviewCount: number;
+  avatar: IMediaType;
 }
-
-
-// export interface UserCardType {
-//   id: number;
-//   name: string;
-//   avatar?: MediaType;
-// }
-//
-// export interface RenterType extends UserCardType {
-//   rating: number;
-//   reviewCount: number;
-//   phoneNumber: string;
-// }

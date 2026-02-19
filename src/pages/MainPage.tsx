@@ -1,6 +1,6 @@
 import { FilterBar, SearchInput } from '@components';
 import { Flex } from '@mantine/core';
-import { CardList } from '@modules/listings-ads/components/CardList.tsx';
+import { CardList } from '@modules/rent-ads/components/CardList.tsx';
 
 export const MainPage = () => {
   return (

@@ -1,8 +1,6 @@
 import { IRentalItem } from '@app-types';
-import { SmallCard } from '@components/cards/SmallCard.tsx';
-import { SimpleGrid } from '@mantine/core';
 
-const mockData: IRentalItem[] = [
+export const mockData: IRentalItem[] = [
   {
     id: 1,
     title: 'Ремонт квартир',
@@ -109,16 +107,3 @@ const mockData: IRentalItem[] = [
     createdDate: '12/01/2026',
   },
 ];
-
-export function CardList() {
-  return (
-    <SimpleGrid
-      cols={{ base: 1, sm: 2, lg: 3 }}
-      spacing="lg"
-    >
-      {mockData.map((item, i) => (
-        <SmallCard key={i} {...item} />
-      ))}
-    </SimpleGrid>
-  );
-}

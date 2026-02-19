@@ -1,7 +1,11 @@
-import { IMediaType, IRentalItem } from '@app-types';
+import {
+  IMediaType,
+  IOwner,
+  IRentalItem,
+} from '@app-types';
 
 export interface IRentalDetail extends IRentalItem {
-  media: IMediaType[];
+  media?: IMediaType[];
   renter: IOwner;
   bookingCalendar: string;
   reviews: number;

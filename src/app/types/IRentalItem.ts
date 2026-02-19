@@ -1,4 +1,8 @@
-import { ICategory, IMediaType, IPriceInfo } from '@app-types/index.ts';
+import {
+  ICategory,
+  IMediaType,
+  IPriceInfo,
+} from '@app-types/index.ts';
 
 type ProductType = 'product' | 'space' | 'service';
 

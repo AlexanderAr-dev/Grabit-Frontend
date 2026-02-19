@@ -1,4 +1,3 @@
-// services/AuthService.ts
 import { api } from '@api/instance.ts';
 import { AxiosResponse } from 'axios';
 

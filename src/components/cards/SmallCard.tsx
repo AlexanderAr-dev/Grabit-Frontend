@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { IRentalItem } from '@app-types';
 import { componentsTheme } from '@constants';
 import {
@@ -16,6 +17,7 @@ interface SmallCardProps extends IRentalItem {
 
 export const SmallCard: FC<SmallCardProps> = ({
   variant = 'primary',
+  id,
   previewImage,
   title,
   rating,
@@ -27,11 +29,10 @@ export const SmallCard: FC<SmallCardProps> = ({
   const themeStyles =
     componentsTheme.cardTheme[colorScheme];
   const variantStyles = themeStyles[variant];
-
-  // Форматирование цены
   const priceText = cost
     ? `${cost.payment} ₽/${cost.priceUnit}`
     : 'Цена не указана';
+  const navigate = useNavigate();
 
   return (
     <Card
@@ -44,12 +45,13 @@ export const SmallCard: FC<SmallCardProps> = ({
         overflow: 'hidden',
         border: `2px solid ${colorScheme === 'dark' ? '#1E293B' : '#E2E8F0'}`,
       }}
+      onClick={() => navigate(`/rent-page/${id}`)}
     >
       <Card.Section>
         <Image
           src={
             previewImage?.url || '/placeholder-image.jpg'
-          } // Добавлен fallback для изображения
+          }
           height={200}
           alt={title}
         />
@@ -90,13 +92,12 @@ export const SmallCard: FC<SmallCardProps> = ({
           c={variantStyles.text}
         >
           {priceText}{' '}
-          {/* Используем отформатированную цену */}
         </Text>
         <Text
           size="sm"
           c={colorScheme === 'dark' ? 'gray.4' : 'gray.6'}
         >
-          {address} {/* Изменено с location на address */}
+          {address}
         </Text>
       </div>
     </Card>

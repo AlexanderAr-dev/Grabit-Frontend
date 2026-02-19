@@ -6,12 +6,13 @@ import {
   ProfilePage,
   RegisterPage,
   RentalsPage,
+  RentPage,
+  ReviewsPage,
   TestHome,
   UserAdsPage,
   UserChatsPage,
   UserRentPage,
 } from '@pages';
-import { RentPage } from '@pages/RentPage.tsx';
 
 export const routes: IRouterType[] = [
   { path: '/test-home', component: <TestHome /> },
@@ -24,5 +25,6 @@ export const routes: IRouterType[] = [
   { path: '/chats', component: <UserChatsPage /> },
   { path: '/chats/:chatId', component: <ChatPage /> },
   { path: '/rentals-page', component: <RentalsPage /> },
-  { path: '/rent-page', component: <RentPage /> },
+  { path: '/rent-page/:id', component: <RentPage /> },
+  { path: '/reviews-page', component: <ReviewsPage /> },
 ];
