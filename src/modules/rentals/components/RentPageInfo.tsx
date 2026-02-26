@@ -1,4 +1,4 @@
-import { IRentalDetail } from '@app-types/IRentalDetail';
+import { IRentalDetail } from '@app-types/IRentalDetail.ts';
 import {
   Box,
   Card,

@@ -1,6 +1,6 @@
 import { IRentalItem } from '@app-types';
 
-export const mockData: IRentalItem[] = [
+export const mockRentItems: IRentalItem[] = [
   {
     id: 1,
     title: 'Ремонт квартир',

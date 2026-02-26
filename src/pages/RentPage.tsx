@@ -1,5 +1,5 @@
-import { RentPageInfo } from '@modules/rent-ads';
-import { mockRentAd } from '@modules/rent-ads/constants/mockRentAd.ts';
+import { RentPageInfo } from '@modules/rentals/components/RentPageInfo.tsx';
+import { mockRentAd } from '@modules/rentals/constants/mockRentAd.ts';
 import { ReviewsList } from '@modules/reviews/components/ReviewsList.tsx';
 import { mockReviews } from '@modules/reviews/constants/mockReviews.ts';
 

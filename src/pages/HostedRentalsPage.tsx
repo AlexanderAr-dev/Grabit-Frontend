@@ -37,7 +37,7 @@ const mockCards: CardPreview[] = [
   },
 ];
 
-export const UserAdsPage: FC = () => {
+export const HostedRentalsPage: FC = () => {
   return (
     <Container size="xl" py="xl">
       <Flex
