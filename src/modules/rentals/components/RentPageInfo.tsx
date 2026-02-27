@@ -197,16 +197,16 @@ export const RentPageInfo = ({
         </Box>
       </Flex>
 
-      <Box mb={30}>
-        <Text size={'xl'}>Объявления на карте</Text>
-        <Text size={'sm'}>{listing.address}</Text>
-        <Image
-          src={
-            'https://articles-assets.akvarto.ru/storage/images/все-районы-Красноярска.jpg'
-          }
-          fallbackSrc="https://via.placeholder.com/800x400"
-        />
-      </Box>
+      {/*<Box mb={30}>*/}
+      {/*  <Text size={'xl'}>Объявления на карте</Text>*/}
+      {/*  <Text size={'sm'}>{listing.address}</Text>*/}
+      {/*  <Image*/}
+      {/*    src={*/}
+      {/*      'https://articles-assets.akvarto.ru/storage/images/все-районы-Красноярска.jpg'*/}
+      {/*    }*/}
+      {/*    fallbackSrc="https://via.placeholder.com/800x400"*/}
+      {/*  />*/}
+      {/*</Box>*/}
 
       <Box mb={30}>
         <Text size={'xl'}>Календарь бронирования</Text>

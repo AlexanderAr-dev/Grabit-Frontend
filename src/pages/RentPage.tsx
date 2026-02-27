@@ -1,3 +1,4 @@
+import MapAddressShow from '@modules/map/components/MapAddressShow';
 import { RentPageInfo } from '@modules/rentals/components/RentPageInfo.tsx';
 import { mockRentAd } from '@modules/rentals/constants/mockRentAd.ts';
 import { ReviewsList } from '@modules/reviews/components/ReviewsList.tsx';
@@ -16,7 +17,7 @@ export const RentPage = () => {
   return (
     <>
       <RentPageInfo listing={mockRentAd[0]} />
-      {/*<Map address={listing.address} />*/}
+      <MapAddressShow coordinates="55.751574,37.573856" />
       {/*<Booking listingId={listing.id} />*/}
       <ReviewsList reviews={mockReviews} />
     </>

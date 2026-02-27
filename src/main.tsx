@@ -5,6 +5,7 @@ import { MantineProvider } from '@mantine/core';
 
 import App from './App';
 
+import 'leaflet/dist/leaflet.css';
 import '@mantine/core/styles.css';
 
 createRoot(document.getElementById('root')!).render(
