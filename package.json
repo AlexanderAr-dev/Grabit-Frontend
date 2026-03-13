@@ -41,6 +41,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "@yandex/ymaps3-types": "^1.0.18856213",
     "baseline-browser-mapping": "^2.9.19",
     "eslint": "^9.9.0",
     "eslint-import-resolver-typescript": "^4.4.4",

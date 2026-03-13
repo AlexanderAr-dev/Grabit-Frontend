@@ -1,4 +1,4 @@
-import { NavItemType } from '@app-types';
+import { INavItem } from '@app-types';
 import {
   IconClockHour4Filled,
   IconMessageFilled,
@@ -6,7 +6,7 @@ import {
   IconSearch,
 } from '@tabler/icons-react';
 
-export const navigationItems: NavItemType[] = [
+export const navigationItems: INavItem[] = [
   {
     title: 'Поиск',
     icon: IconSearch,
