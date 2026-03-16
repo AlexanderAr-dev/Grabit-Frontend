@@ -1,4 +1,5 @@
 import { IRouterType } from '@app-types/IRouterType.ts';
+import CreateListingPage from '@modules/create-listing/components/CreateListingPage.tsx';
 import MapDemoPage from '@modules/demoMap/MapDemoPage.tsx';
 import {
   ChatPage,
@@ -42,5 +43,9 @@ export const routes: IRouterType[] = [
   {
     path: '/demo-map-page',
     component: <MapDemoPage />,
+  },
+  {
+    path: '/demo-create-page',
+    component: <CreateListingPage />,
   },
 ];
