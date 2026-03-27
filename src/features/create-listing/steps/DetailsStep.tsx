@@ -1,60 +1,88 @@
 import { useState } from 'react';
 import {
   ActionIcon,
-  Button,
-  Group,
+  Divider,
+  Flex,
   NumberInput,
-  Paper,
   Stack,
+  Switch,
+  Text,
   Textarea,
   TextInput,
   Title,
 } from '@mantine/core';
-import { IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconTrash } from '@tabler/icons-react';
 
-import { listingOptions } from '../model/constants/options';
+import { Button } from '@shared/ui';
+import { Characteristic } from '../model/types/CreateListing';
 import { StepProps } from '../model/types/StepProps';
 
 const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
+  const isSpace = data.type === 'space';
+
   const [title, setTitle] = useState(data.title ?? '');
   const [description, setDescription] = useState(data.description ?? '');
-  const [features, setFeatures] = useState<string[]>(data.features ?? []);
-  const [featureInput, setFeatureInput] = useState('');
-  const [options, setOptions] = useState<Record<string, number>>(
-    Object.fromEntries((data.options ?? []).map(o => [o.key, o.value])),
+  const [pricePerHour, setPricePerHour] = useState<number | string>(
+    data.pricePerHour ?? '',
   );
 
-  const addFeature = () => {
-    if (!featureInput.trim()) return;
-    setFeatures([...features, featureInput]);
-    setFeatureInput('');
+  // Custom characteristics
+  const [characteristics, setCharacteristics] = useState<Characteristic[]>(
+    data.characteristics ?? [],
+  );
+  const [charLabel, setCharLabel] = useState('');
+  const [charValue, setCharValue] = useState('');
+
+  // Space-specific predefined
+  const [bathrooms, setBathrooms] = useState<number | string>(
+    data.spaceDetails?.bathrooms ?? '',
+  );
+  const [sleepingPlaces, setSleepingPlaces] = useState<number | string>(
+    data.spaceDetails?.sleepingPlaces ?? '',
+  );
+  const [hasSauna, setHasSauna] = useState(data.spaceDetails?.hasSauna ?? false);
+
+  const addCharacteristic = () => {
+    if (!charLabel.trim() || !charValue.trim()) return;
+    setCharacteristics(prev => [
+      ...prev,
+      { label: charLabel.trim(), value: charValue.trim() },
+    ]);
+    setCharLabel('');
+    setCharValue('');
   };
 
-  const removeFeature = (index: number) => {
-    setFeatures(features.filter((_, i) => i !== index));
+  const removeCharacteristic = (index: number) => {
+    setCharacteristics(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleNext = () => {
+    if (!title.trim()) return;
     updateData({
-      title,
-      description,
-      features,
-      options: Object.entries(options).map(([key, value]) => ({
-        key,
-        label: listingOptions.find(o => o.key === key)?.label ?? key,
-        value,
-      })),
+      title: title.trim(),
+      description: description.trim(),
+      pricePerHour: Number(pricePerHour) || undefined,
+      characteristics,
+      ...(isSpace && {
+        spaceDetails: {
+          bathrooms: Number(bathrooms) || undefined,
+          sleepingPlaces: Number(sleepingPlaces) || undefined,
+          hasSauna,
+        },
+      }),
     });
     next?.();
   };
 
   return (
-    <Stack>
+    <Stack gap="md">
       <Title order={2}>Информация об объявлении</Title>
 
       <TextInput
         label="Название"
-        placeholder="Например: Камера Sony A7 III"
+        placeholder={
+          isSpace ? 'Например: Уютная студия в центре' : 'Например: Sony PlayStation 5'
+        }
         value={title}
         onChange={e => setTitle(e.currentTarget.value)}
         required
@@ -62,57 +90,120 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
 
       <Textarea
         label="Описание"
-        placeholder="Опишите состояние, комплектацию и особенности"
+        placeholder="Расскажите подробнее об условиях аренды, состоянии и особенностях"
         value={description}
         onChange={e => setDescription(e.currentTarget.value)}
         minRows={4}
+        autosize
       />
 
-      <Title order={4}>Комплектация</Title>
+      <NumberInput
+        label="Стоимость за час (₽)"
+        placeholder="0"
+        min={0}
+        value={pricePerHour}
+        onChange={setPricePerHour}
+        w={200}
+      />
 
-      <Group>
-        <TextInput
-          placeholder="Например: 2 батареи"
-          value={featureInput}
-          onChange={e => setFeatureInput(e.currentTarget.value)}
-        />
-        <Button onClick={addFeature}>Добавить</Button>
-      </Group>
+      {isSpace && (
+        <>
+          <Divider label="Характеристики помещения" labelPosition="left" mt="sm" />
 
-      <Stack>
-        {features.map((feature, index) => (
-          <Paper key={index} p="sm" withBorder>
-            <Group justify="space-between">
-              {feature}
-              <ActionIcon color="red" onClick={() => removeFeature(index)}>
-                <IconTrash size={16} />
-              </ActionIcon>
-            </Group>
-          </Paper>
-        ))}
-      </Stack>
+          <Flex gap="md" wrap="wrap">
+            <NumberInput
+              label="Ванных комнат"
+              placeholder="0"
+              min={0}
+              value={bathrooms}
+              onChange={setBathrooms}
+              w={160}
+            />
+            <NumberInput
+              label="Спальные места"
+              placeholder="0"
+              min={0}
+              value={sleepingPlaces}
+              onChange={setSleepingPlaces}
+              w={160}
+            />
+          </Flex>
 
-      <Title order={4}>Параметры</Title>
-
-      <Stack>
-        {listingOptions.map(option => (
-          <NumberInput
-            key={option.key}
-            label={option.label}
-            placeholder="0"
-            min={0}
-            value={options[option.key] ?? ''}
-            onChange={value =>
-              setOptions({ ...options, [option.key]: Number(value) })
-            }
+          <Switch
+            label="Сауна"
+            checked={hasSauna}
+            onChange={e => setHasSauna(e.currentTarget.checked)}
+            size="md"
           />
-        ))}
-      </Stack>
+        </>
+      )}
 
-      <Group justify="space-between" mt="md">
-        <Button variant="default" onClick={prev}>Назад</Button>
-        <Button onClick={handleNext}>Далее</Button>
-      </Group>
+      <Divider label="Характеристики" labelPosition="left" mt="sm" />
+
+      <Flex gap="sm" align="flex-end">
+        <TextInput
+          label="Название"
+          placeholder={isSpace ? 'Балкон' : 'Геймпад'}
+          value={charLabel}
+          onChange={e => setCharLabel(e.currentTarget.value)}
+          style={{ flex: 1 }}
+        />
+        <TextInput
+          label="Значение"
+          placeholder={isSpace ? 'Есть' : '2 шт.'}
+          value={charValue}
+          onChange={e => setCharValue(e.currentTarget.value)}
+          style={{ flex: 1 }}
+          onKeyDown={e => e.key === 'Enter' && addCharacteristic()}
+        />
+        <ActionIcon
+          size={36}
+          variant="filled"
+          style={{ backgroundColor: '#FF8104', marginBottom: 1 }}
+          onClick={addCharacteristic}
+          disabled={!charLabel.trim() || !charValue.trim()}
+        >
+          <IconPlus size={18} />
+        </ActionIcon>
+      </Flex>
+
+      {characteristics.length > 0 && (
+        <Stack gap={6}>
+          {characteristics.map((char, index) => (
+            <Flex
+              key={index}
+              align="center"
+              justify="space-between"
+              px="sm"
+              py={8}
+              style={{
+                borderRadius: 8,
+                border: '1px solid #e9ecef',
+                background: '#f8f9fa',
+              }}
+            >
+              <Text size="sm">
+                <Text span fw={600}>{char.label}</Text>
+                <Text span c="dimmed"> — </Text>
+                {char.value}
+              </Text>
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                color="red"
+                onClick={() => removeCharacteristic(index)}
+              >
+                <IconTrash size={14} />
+              </ActionIcon>
+            </Flex>
+          ))}
+        </Stack>
+      )}
+
+      <Flex gap="md" justify="space-between" mt="md">
+        <Button variant="secondary" onClick={prev}>Назад</Button>
+        <Button disabled={!title.trim()} onClick={handleNext}>Далее</Button>
+      </Flex>
     </Stack>
   );
 };

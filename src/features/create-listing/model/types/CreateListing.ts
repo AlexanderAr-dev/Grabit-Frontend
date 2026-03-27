@@ -1,4 +1,4 @@
-export type ListingType = 'item_rent';
+export type ListingType = 'item_rent' | 'service' | 'space';
 
 export type WeekDay =
   | 'mon'
@@ -10,14 +10,19 @@ export type WeekDay =
   | 'sun';
 
 export interface BookingDateRange {
-  start: Date;
-  end: Date;
+  start: string; // YYYY-MM-DD
+  end: string;
 }
 
-export interface ListingOption {
-  key: string;
+export interface Characteristic {
   label: string;
-  value: number;
+  value: string;
+}
+
+export interface SpaceDetails {
+  bathrooms?: number;
+  sleepingPlaces?: number;
+  hasSauna?: boolean;
 }
 
 export interface DaySchedule {
@@ -27,19 +32,19 @@ export interface DaySchedule {
 }
 
 export interface BookingSettings {
-  range?: BookingDateRange;
+  availabilityRange?: BookingDateRange;
+  autoRenewal?: boolean;
   enabledDays?: WeekDay[];
   schedule?: DaySchedule[];
 }
 
 export interface CreateListingData {
   type: ListingType;
-  categoryId?: string;
   title?: string;
   description?: string;
-  features?: string[];
-  options?: ListingOption[];
-  pricePerDay?: number;
+  pricePerHour?: number;
+  characteristics?: Characteristic[];
+  spaceDetails?: SpaceDetails;
   location?: { lat: number; lng: number };
   booking?: BookingSettings;
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Button, Checkbox, Group, Stack, Title } from '@mantine/core';
+import { Checkbox, Flex, Stack, Title } from '@mantine/core';
 
+import { Button } from '@shared/ui';
 import { StepProps } from '../model/types/StepProps';
 import { WeekDay } from '../model/types/CreateListing';
 
@@ -26,27 +27,33 @@ const WeekDaysStep = ({ data, updateData, next, prev }: StepProps) => {
   };
 
   const handleNext = () => {
+    if (!selected.length) return;
     updateData({ booking: { ...data.booking, enabledDays: selected } });
     next?.();
   };
 
   return (
-    <Stack>
+    <Stack gap="lg">
       <Title order={2}>Дни аренды</Title>
-      <Stack>
+      <Stack gap="md">
         {days.map(d => (
           <Checkbox
             key={d.key}
             label={d.label}
             checked={selected.includes(d.key)}
             onChange={() => toggleDay(d.key)}
+            size="lg"
+            styles={{
+              label: { fontSize: 18, cursor: 'pointer' },
+              input: { cursor: 'pointer' },
+            }}
           />
         ))}
       </Stack>
-      <Group justify="space-between">
-        <Button variant="default" onClick={prev}>Назад</Button>
+      <Flex gap="md" justify="space-between" mt="md">
+        <Button variant="secondary" onClick={prev}>Назад</Button>
         <Button disabled={!selected.length} onClick={handleNext}>Далее</Button>
-      </Group>
+      </Flex>
     </Stack>
   );
 };

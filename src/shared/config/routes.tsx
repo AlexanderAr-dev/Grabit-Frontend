@@ -1,6 +1,4 @@
 import { IRouterType } from '../types/IRouterType';
-import { CreateListingPage } from '@features/create-listing';
-import { MapDemoPage } from '@widgets/demo-map';
 import {
   ChatPage,
   CreateRentalPage,
@@ -16,6 +14,7 @@ import {
   UserChatsPage,
   UserRentPage,
 } from '@pages';
+import { CreateListingPage } from '@features/create-listing';
 
 export const routes: IRouterType[] = [
   { path: '/test-home', component: <TestHome /> },
@@ -31,6 +30,5 @@ export const routes: IRouterType[] = [
   { path: '/rent-page/:id', component: <RentPage /> },
   { path: '/reviews-page', component: <ReviewsPage /> },
   { path: '/create-rental', component: <CreateRentalPage /> },
-  { path: '/demo-map-page', component: <MapDemoPage /> },
-  { path: '/demo-create-page', component: <CreateListingPage /> },
+  { path: '/create-listing', component: <CreateListingPage /> },
 ];

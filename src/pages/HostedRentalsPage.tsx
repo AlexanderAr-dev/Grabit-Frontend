@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Container, Flex, SimpleGrid } from '@mantine/core';
 
 import { CardPreview } from '@shared/types';
@@ -40,11 +41,13 @@ const mockCards: CardPreview[] = [
 ];
 
 export const HostedRentalsPage: FC = () => {
+  const navigate = useNavigate();
+
   return (
     <Container size="xl" py="xl">
       <Flex gap="md" justify="center" align="center" direction="row" pb={20}>
         <SearchInput />
-        <Button radius="lg" w={180} h={40}>
+        <Button radius="lg" w={180} h={40} onClick={() => navigate('/create-listing')}>
           Новое объявление
         </Button>
       </Flex>
