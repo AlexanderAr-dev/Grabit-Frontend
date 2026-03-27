@@ -1,5 +1,5 @@
 import { FC, useState } from 'react';
-import { RentalCard } from '@components/cards/RentalCard';
+import { RentalCard } from '@entities/rental';
 import {
   Collapse,
   Group,

@@ -1,9 +1,5 @@
-import { LoginForm } from '@modules/auth/components/LoginForm.tsx';
+import { LoginForm } from '@features/auth';
 
 export const LoginPage = () => {
-  return (
-    <>
-      <LoginForm />
-    </>
-  );
+  return <LoginForm />;
 };

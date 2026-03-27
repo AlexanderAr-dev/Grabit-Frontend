@@ -1,5 +1,4 @@
-import { RentalsView } from '@modules/rentals';
-
+import { RentalsView } from '@features/search-rentals';
 
 export const RentalsPage = () => {
   return <RentalsView />;

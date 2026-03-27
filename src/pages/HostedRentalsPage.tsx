@@ -1,8 +1,10 @@
 import { FC } from 'react';
-import { CardPreview } from '@app-types';
-import { MediumCard, SearchInput } from '@components';
 import { Container, Flex, SimpleGrid } from '@mantine/core';
-import { Button } from '@ui';
+
+import { CardPreview } from '@shared/types';
+import { Button } from '@shared/ui';
+import { MediumCard } from '@entities/rental';
+import { SearchInput } from '@features/search-rentals';
 
 const mockCards: CardPreview[] = [
   {
@@ -14,7 +16,7 @@ const mockCards: CardPreview[] = [
     rating: 4.5,
     reviewCount: 142,
     shortDescription:
-      'Ремонт под ключ с гарантией качества: быстро, аккуратно и по доступной цене. Восстанавливаем работоспособность техники, мебели и интерьера, чтобы всё служило вам долго и выглядело как новое.',
+      'Ремонт под ключ с гарантией качества: быстро, аккуратно и по доступной цене.',
     createdAt: 'Отз.: 142',
     category: { id: 1, name: 'services' },
     previewImage:
@@ -40,26 +42,16 @@ const mockCards: CardPreview[] = [
 export const HostedRentalsPage: FC = () => {
   return (
     <Container size="xl" py="xl">
-      <Flex
-        gap="md"
-        justify="center"
-        align="center"
-        direction="row"
-        pb={20}
-      >
+      <Flex gap="md" justify="center" align="center" direction="row" pb={20}>
         <SearchInput />
-        <Button radius={'lg'} w={180} h={40}>
+        <Button radius="lg" w={180} h={40}>
           Новое объявление
         </Button>
       </Flex>
 
       <SimpleGrid cols={{ base: 1, lg: 1 }} spacing="lg">
         {mockCards.map(card => (
-          <MediumCard
-            key={card.id}
-            variant="primary"
-            {...card}
-          />
+          <MediumCard key={card.id} variant="primary" {...card} />
         ))}
       </SimpleGrid>
     </Container>

@@ -34,26 +34,15 @@ export default tseslint.config(
         'warn',
         {
           groups: [
-            // common types
             ['^@/types'],
-            // Packages. `react` related packages come first.
             ['^react', '^@?\\w'],
-            // Internal packages.
-            // api
             ['^@?\\/api'],
-            // api
             ['^@?\\/utils'],
-            // misc
             ['^@?\\/[^(ui|api|utils)]'],
-            // UI
             ['^@?\\/ui\\/[^ce]', '^@?\\/ui\\/e', '^@?\\/ui\\/c'],
-            // Side effect imports.
             ['^\\u0000'],
-            // Parent imports. Put `..` last.
             ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
-            // Other relative imports. Put same-folder imports and `.` last.
             ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
-            // Style imports.
             ['^.+\\.s?css$'],
           ],
         },
@@ -61,32 +50,14 @@ export default tseslint.config(
       'boundaries/element-types': [
         'error',
         {
-          'default': 'allow',
+          'default': 'disallow',
           'rules': [
-            {
-              'from': 'ui',
-              'disallow': [
-                'pages',
-                'modules',
-                'components'
-              ],
-              'message': 'import in ui scope from pages, modules, components is forbidden'
-            },
-            {
-              'from': 'components',
-              'disallow': [
-                'pages',
-                'modules',
-              ],
-              'message': 'import in components scope from pages, modules is forbidden'
-            },
-            {
-              'from': 'modules',
-              'disallow': [
-                'pages',
-              ],
-              'message': 'import in modules scope from pages is forbidden'
-            },
+            { 'from': 'shared',   'allow': [] },
+            { 'from': 'entities', 'allow': ['shared'] },
+            { 'from': 'features', 'allow': ['shared', 'entities'] },
+            { 'from': 'widgets',  'allow': ['shared', 'entities', 'features'] },
+            { 'from': 'pages',    'allow': ['shared', 'entities', 'features', 'widgets'] },
+            { 'from': 'app',      'allow': ['shared', 'entities', 'features', 'widgets', 'pages'] },
           ]
         }
       ],
@@ -99,26 +70,12 @@ export default tseslint.config(
     },
     settings: {
       'boundaries/elements': [
-        {
-          'type': 'app',
-          'pattern': 'src/app/**'
-        },
-        {
-          'type': 'ui',
-          'pattern': 'src/ui/**'
-        },
-        {
-          'type': 'components',
-          'pattern': 'src/components/**'
-        },
-        {
-          'type': 'modules',
-          'pattern': 'src/modules/**'
-        },
-        {
-          'type': 'pages',
-          'pattern': 'src/pages/**'
-        },
+        { 'type': 'shared',   'pattern': 'src/shared/**' },
+        { 'type': 'entities', 'pattern': 'src/entities/**' },
+        { 'type': 'features', 'pattern': 'src/features/**' },
+        { 'type': 'widgets',  'pattern': 'src/widgets/**' },
+        { 'type': 'pages',    'pattern': 'src/pages/**' },
+        { 'type': 'app',      'pattern': 'src/app/**' },
       ],
       'import/resolver': {
         'typescript': {

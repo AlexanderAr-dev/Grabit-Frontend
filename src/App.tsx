@@ -1,17 +1,12 @@
 import { FC } from 'react';
-import { MainLayout } from '@components';
-import {
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query';
 
-const App: FC = () => {
-  const queryClient = new QueryClient();
-  return (
-    <QueryClientProvider client={queryClient}>
-      <MainLayout />
-    </QueryClientProvider>
-  );
-};
+import { AppProviders } from './app/providers';
+import { AppLayout } from '@widgets/app-layout';
+
+const App: FC = () => (
+  <AppProviders>
+    <AppLayout />
+  </AppProviders>
+);
 
 export default App;

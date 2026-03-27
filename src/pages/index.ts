@@ -1,4 +1,5 @@
 export * from './ChatPage.tsx';
+export * from './HomePage.tsx';
 export * from './CreateRentalPage.tsx';
 export * from './HostedRentalsPage.tsx';
 export * from './LoginPage.tsx';

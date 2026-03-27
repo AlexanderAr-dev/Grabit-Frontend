@@ -1,9 +1,5 @@
-import { RegisterForm } from '@modules/auth/components/RegisterForm.tsx';
+import { RegisterForm } from '@features/auth';
 
 export const RegisterPage = () => {
-  return (
-    <>
-      <RegisterForm />
-    </>
-  );
+  return <RegisterForm />;
 };

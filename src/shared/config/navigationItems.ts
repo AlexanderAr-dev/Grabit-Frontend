@@ -1,0 +1,35 @@
+import {
+  IconClockHour4Filled,
+  IconMessageFilled,
+  IconPencilPlus,
+  IconSearch,
+} from '@tabler/icons-react';
+
+import { INavItem } from '../types/INavItem';
+
+export const navigationItems: INavItem[] = [
+  {
+    title: 'Поиск',
+    icon: IconSearch,
+    href: '/',
+    color: '#FF8104',
+  },
+  {
+    title: 'Мое',
+    icon: IconPencilPlus,
+    href: '/my-products',
+    color: 'white',
+  },
+  {
+    title: 'Аренда',
+    icon: IconClockHour4Filled,
+    href: '/rentals-page',
+    color: 'white',
+  },
+  {
+    title: 'Чаты',
+    icon: IconMessageFilled,
+    href: '/chats',
+    color: 'white',
+  },
+];

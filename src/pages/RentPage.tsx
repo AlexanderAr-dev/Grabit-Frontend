@@ -1,24 +1,12 @@
-import MapAddressShow from '@modules/map/components/MapAddressShow';
-import { RentPageInfo } from '@modules/rentals/components/RentPageInfo.tsx';
-import { mockRentAd } from '@modules/rentals/constants/mockRentAd.ts';
-import { ReviewsList } from '@modules/reviews/components/ReviewsList.tsx';
-import { mockReviews } from '@modules/reviews/constants/mockReviews.ts';
+import { MapAddressShow } from '@entities/map';
+import { mockRentAd, RentPageInfo } from '@entities/rental';
+import { mockReviews, ReviewsList } from '@entities/review';
 
 export const RentPage = () => {
-  // const { id } = useParams();
-  // const { data: rent, isLoading } = useGetRentInfoById(
-  //   Number(id),
-  // );
-  // console.log(rent);
-  //
-  // if (isLoading) return <div>Loading...</div>;
-  // if (!rent) return null;
-
   return (
     <>
       <RentPageInfo listing={mockRentAd[0]} />
       <MapAddressShow coordinates="55.751574,37.573856" />
-      {/*<Booking listingId={listing.id} />*/}
       <ReviewsList reviews={mockReviews} />
     </>
   );

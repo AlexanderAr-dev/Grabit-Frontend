@@ -1,6 +1,6 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { UserCard } from '../app/testTypes/UserCard.ts';
+import { UserCard, IMediaType } from '@shared/types';
 import {
   ActionIcon,
   Card,
@@ -13,7 +13,6 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { IconSend } from '@tabler/icons-react';
-import { IMediaType } from '@app-types/IMediaType.ts';
 
 interface Message {
   id: string;
@@ -60,17 +59,38 @@ const cardTheme = {
   },
 };
 
-// Моковые данные для 4 чатов
+const mockChats: Chat[] = [
+  {
+    id: '1',
+    talker: { id: 1, name: 'Thomas Selby' },
+    adName: 'Квартира в центре',
+    lastMessageDate: '11/10/2021',
+    messages: [
+      { id: '1-1', text: 'Здравствуйте! Интересует аренда.', date: '10:00', isRead: true, isReceive: true, userId: 1, media: [] },
+      { id: '1-2', text: 'Добрый день, чем могу помочь?', date: '10:01', isRead: true, isReceive: false, userId: 2, media: [] },
+    ],
+  },
+  {
+    id: '2',
+    talker: { id: 2, name: 'Anna Smith' },
+    adName: 'Офис на Тверской',
+    lastMessageDate: '11/10/2021',
+    messages: [
+      { id: '2-1', text: 'Есть ли свободные даты?', date: '09:30', isRead: true, isReceive: true, userId: 2, media: [] },
+    ],
+  },
+];
 
-const MessageBubble: FC<{ message: Message }> = ({
+const MessageBubble: FC<{ message: Message; talkerName: string }> = ({
   message,
+  talkerName,
 }) => {
   const { colorScheme } = useMantineColorScheme();
   const themeStyles =
     cardTheme[colorScheme as keyof typeof cardTheme];
   const variantStyles = themeStyles.primary;
 
-  const isUser = message.sender === 'user';
+  const isUser = !message.isReceive;
 
   return (
     <Group
@@ -78,13 +98,13 @@ const MessageBubble: FC<{ message: Message }> = ({
       mb="md"
     >
       <Stack gap={2} style={{ maxWidth: '70%' }}>
-        {!isUser && message.name && (
+        {!isUser && (
           <Text
             size="sm"
             c={variantStyles.secondaryText}
             pl={8}
           >
-            {message.name}
+            {talkerName}
           </Text>
         )}
         <Paper
@@ -92,9 +112,7 @@ const MessageBubble: FC<{ message: Message }> = ({
           radius="lg"
           style={{
             backgroundColor: isUser
-              ? colorScheme === 'dark'
-                ? '#EA9432'
-                : '#EA9432'
+              ? '#EA9432'
               : colorScheme === 'dark'
                 ? '#373A40'
                 : '#F1F3F5',
@@ -110,7 +128,7 @@ const MessageBubble: FC<{ message: Message }> = ({
           pr={isUser ? 8 : 0}
           pl={isUser ? 0 : 8}
         >
-          {message.timestamp}
+          {message.date}
         </Text>
       </Stack>
     </Group>
@@ -135,7 +153,6 @@ export const ChatPage: FC = () => {
   }, [chatId]);
 
   useEffect(() => {
-    // Автопрокрутка к последнему сообщению
     if (viewport.current) {
       viewport.current.scrollTo({
         top: viewport.current.scrollHeight,
@@ -150,19 +167,20 @@ export const ChatPage: FC = () => {
     const newMessageObj: Message = {
       id: `${currentChat.id}-${currentChat.messages.length + 1}`,
       text: newMessage,
-      sender: 'user',
-      timestamp: new Date().toLocaleTimeString([], {
+      date: new Date().toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
       }),
+      isRead: false,
+      isReceive: false,
+      userId: 0,
+      media: [],
     };
 
-    const updatedChat = {
+    setCurrentChat({
       ...currentChat,
       messages: [...currentChat.messages, newMessageObj],
-    };
-
-    setCurrentChat(updatedChat);
+    });
     setNewMessage('');
   };
 
@@ -213,7 +231,6 @@ export const ChatPage: FC = () => {
           flexDirection: 'column',
         }}
       >
-        {/* Заголовок чата */}
         <Card.Section
           p="md"
           style={{
@@ -225,11 +242,10 @@ export const ChatPage: FC = () => {
           }}
         >
           <Text size="xl" fw={600} c={variantStyles.text}>
-            {currentChat.name}
+            {currentChat.adName}
           </Text>
         </Card.Section>
 
-        {/* Область сообщений */}
         <ScrollArea
           style={{ flex: 1, padding: '16px' }}
           viewportRef={viewport}
@@ -239,12 +255,12 @@ export const ChatPage: FC = () => {
               <MessageBubble
                 key={message.id}
                 message={message}
+                talkerName={currentChat.talker.name}
               />
             ))}
           </Stack>
         </ScrollArea>
 
-        {/* Поле ввода */}
         <Card.Section
           p="md"
           style={{
