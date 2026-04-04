@@ -1,3 +1,4 @@
+export * from './model/AuthContext';
 export * from './model/useLogin';
 export * from './model/useLogout';
 export * from './model/useRegister';

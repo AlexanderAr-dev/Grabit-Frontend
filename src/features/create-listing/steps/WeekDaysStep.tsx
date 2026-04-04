@@ -43,6 +43,7 @@ const WeekDaysStep = ({ data, updateData, next, prev }: StepProps) => {
             checked={selected.includes(d.key)}
             onChange={() => toggleDay(d.key)}
             size="lg"
+            color="#FF8104"
             styles={{
               label: { fontSize: 18, cursor: 'pointer' },
               input: { cursor: 'pointer' },

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import {
   ActionIcon,
+  Box,
   Divider,
   Flex,
   NumberInput,
+  Paper,
   Stack,
   Switch,
   Text,
@@ -14,8 +16,39 @@ import {
 import { IconPlus, IconTrash } from '@tabler/icons-react';
 
 import { Button } from '@shared/ui';
+import { categoriesByType } from '../model/constants/categoryData';
+import { CategoryNode } from '../model/constants/Categories';
 import { Characteristic } from '../model/types/CreateListing';
 import { StepProps } from '../model/types/StepProps';
+
+// Включить/выключить обязательность заполнения полей
+const VALIDATION_ENABLED = false;
+
+interface CategoryColumnProps {
+  items: CategoryNode[];
+  selectedId?: string;
+  onSelect: (item: CategoryNode) => void;
+}
+
+const CategoryColumn = ({ items, selectedId, onSelect }: CategoryColumnProps) => (
+  <Stack gap={4}>
+    {items.map(item => (
+      <Paper
+        key={item.id}
+        p="xs"
+        withBorder
+        style={{
+          cursor: 'pointer',
+          background: selectedId === item.id ? '#fff4e6' : undefined,
+          borderColor: selectedId === item.id ? '#FF8104' : undefined,
+        }}
+        onClick={() => onSelect(item)}
+      >
+        <Text size="sm">{item.name}</Text>
+      </Paper>
+    ))}
+  </Stack>
+);
 
 const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
   const isSpace = data.type === 'space';
@@ -26,14 +59,51 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
     data.pricePerHour ?? '',
   );
 
-  // Custom characteristics
+  // Категория
+  const rootCategories = categoriesByType[data.type] ?? [];
+
+  const [level1, setLevel1] = useState<CategoryNode | null>(() => {
+    if (!data.categoryId) return null;
+    for (const c1 of rootCategories) {
+      if (c1.id === data.categoryId) return c1;
+      for (const c2 of c1.children ?? []) {
+        if (c2.id === data.categoryId) return c1;
+        if (c2.children?.some(c3 => c3.id === data.categoryId)) return c1;
+      }
+    }
+    return null;
+  });
+
+  const [level2, setLevel2] = useState<CategoryNode | null>(() => {
+    if (!data.categoryId) return null;
+    for (const c1 of rootCategories) {
+      for (const c2 of c1.children ?? []) {
+        if (c2.id === data.categoryId) return c2;
+        if (c2.children?.some(c3 => c3.id === data.categoryId)) return c2;
+      }
+    }
+    return null;
+  });
+
+  const [level3, setLevel3] = useState<CategoryNode | null>(() => {
+    if (!data.categoryId) return null;
+    for (const c1 of rootCategories) {
+      for (const c2 of c1.children ?? []) {
+        const found = c2.children?.find(c3 => c3.id === data.categoryId);
+        if (found) return found;
+      }
+    }
+    return null;
+  });
+
+  // Характеристики
   const [characteristics, setCharacteristics] = useState<Characteristic[]>(
     data.characteristics ?? [],
   );
   const [charLabel, setCharLabel] = useState('');
   const [charValue, setCharValue] = useState('');
 
-  // Space-specific predefined
+  // Space-specific
   const [bathrooms, setBathrooms] = useState<number | string>(
     data.spaceDetails?.bathrooms ?? '',
   );
@@ -56,13 +126,16 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
     setCharacteristics(prev => prev.filter((_, i) => i !== index));
   };
 
+  const selectedCategoryId = level3?.id ?? level2?.id ?? level1?.id;
+
   const handleNext = () => {
-    if (!title.trim()) return;
+    if (VALIDATION_ENABLED && !title.trim()) return;
     updateData({
       title: title.trim(),
       description: description.trim(),
       pricePerHour: Number(pricePerHour) || undefined,
       characteristics,
+      categoryId: selectedCategoryId,
       ...(isSpace && {
         spaceDetails: {
           bathrooms: Number(bathrooms) || undefined,
@@ -73,6 +146,8 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
     });
     next?.();
   };
+
+  const canProceed = !VALIDATION_ENABLED || !!title.trim();
 
   return (
     <Stack gap="md">
@@ -85,7 +160,7 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
         }
         value={title}
         onChange={e => setTitle(e.currentTarget.value)}
-        required
+        required={VALIDATION_ENABLED}
       />
 
       <Textarea
@@ -105,6 +180,53 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
         onChange={setPricePerHour}
         w={200}
       />
+
+      {/* Категория */}
+      <Divider label="Категория" labelPosition="left" mt="sm" />
+
+      {level1 && level2 && level3 && (
+        <Text size="sm" c="dimmed">
+          Выбрано:{' '}
+          <Text span fw={600} c="dark">
+            {level1.name} → {level2.name} → {level3.name}
+          </Text>
+        </Text>
+      )}
+
+      <Box style={{ overflowX: 'auto' }}>
+        <Flex gap="sm" style={{ minWidth: 480 }}>
+          <Box style={{ flex: 1, minWidth: 140 }}>
+            <Text size="xs" c="dimmed" mb={6} fw={500}>Раздел</Text>
+            <CategoryColumn
+              items={rootCategories}
+              selectedId={level1?.id}
+              onSelect={item => { setLevel1(item); setLevel2(null); setLevel3(null); }}
+            />
+          </Box>
+
+          {level1?.children && (
+            <Box style={{ flex: 1, minWidth: 140 }}>
+              <Text size="xs" c="dimmed" mb={6} fw={500}>Подраздел</Text>
+              <CategoryColumn
+                items={level1.children}
+                selectedId={level2?.id}
+                onSelect={item => { setLevel2(item); setLevel3(null); }}
+              />
+            </Box>
+          )}
+
+          {level2?.children && (
+            <Box style={{ flex: 1, minWidth: 140 }}>
+              <Text size="xs" c="dimmed" mb={6} fw={500}>Категория</Text>
+              <CategoryColumn
+                items={level2.children}
+                selectedId={level3?.id}
+                onSelect={item => setLevel3(item)}
+              />
+            </Box>
+          )}
+        </Flex>
+      </Box>
 
       {isSpace && (
         <>
@@ -138,7 +260,7 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
         </>
       )}
 
-      <Divider label="Характеристики" labelPosition="left" mt="sm" />
+      <Divider label="Дополнительные характеристики" labelPosition="left" mt="sm" />
 
       <Flex gap="sm" align="flex-end">
         <TextInput
@@ -202,7 +324,7 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
 
       <Flex gap="md" justify="space-between" mt="md">
         <Button variant="secondary" onClick={prev}>Назад</Button>
-        <Button disabled={!title.trim()} onClick={handleNext}>Далее</Button>
+        <Button disabled={!canProceed} onClick={handleNext}>Далее</Button>
       </Flex>
     </Stack>
   );

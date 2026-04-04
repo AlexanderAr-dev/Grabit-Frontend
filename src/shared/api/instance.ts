@@ -8,6 +8,20 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use(config => {
-  config.headers.Authorization = `Bearer ${localStorage.getItem('token')}`;
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
+
+api.interceptors.response.use(
+  res => res,
+  err => {
+    if (err.response?.status === 401 && localStorage.getItem('token')) {
+      localStorage.removeItem('token');
+      window.location.href = '/';
+    }
+    return Promise.reject(err);
+  },
+);

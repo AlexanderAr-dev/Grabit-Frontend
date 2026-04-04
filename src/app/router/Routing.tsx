@@ -1,20 +1,24 @@
-import { FC, ReactNode } from 'react';
+import { FC } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
-export interface RouterType {
-  path: string;
-  component: ReactNode;
-}
+import { IRouterType } from '@shared/types';
+import { PrivateRoute } from './PrivateRoute';
 
 interface RoutingProps {
-  routes: RouterType[];
+  routes: IRouterType[];
 }
 
 export const Routing: FC<RoutingProps> = ({ routes }) => {
   return (
     <Routes>
-      {routes.map(({ path, component }) => (
-        <Route key={path} path={path} element={component} />
+      {routes.map(({ path, component, private: isPrivate }) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            isPrivate ? <PrivateRoute>{component}</PrivateRoute> : component
+          }
+        />
       ))}
     </Routes>
   );

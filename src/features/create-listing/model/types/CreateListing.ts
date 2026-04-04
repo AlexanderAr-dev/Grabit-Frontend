@@ -38,13 +38,23 @@ export interface BookingSettings {
   schedule?: DaySchedule[];
 }
 
+export interface MediaFile {
+  url: string;   // object URL — живёт только в текущей сессии
+  name: string;
+  type: 'image' | 'video';
+}
+
 export interface CreateListingData {
   type: ListingType;
+  categoryId?: string;
   title?: string;
   description?: string;
   pricePerHour?: number;
   characteristics?: Characteristic[];
   spaceDetails?: SpaceDetails;
+  media?: MediaFile[];
+  previewIndex?: number;
   location?: { lat: number; lng: number };
+  address?: string;
   booking?: BookingSettings;
 }
