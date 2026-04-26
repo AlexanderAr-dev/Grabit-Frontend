@@ -1,4 +1,6 @@
 export * from './ChatPage.tsx';
+export * from './EditListingCalendarPage.tsx';
+export * from './EditListingInfoPage.tsx';
 export * from './HomePage.tsx';
 export * from './CreateRentalPage.tsx';
 export * from './HostedRentalsPage.tsx';

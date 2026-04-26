@@ -1,23 +1,27 @@
+import { useNavigate } from 'react-router-dom';
 import { Container, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 
-import { Button, Input, Label, PageHeader } from '@shared/ui';
-
-import { useProfileLogin } from '../model/useLogin';
+import { Button, Input, PageHeader } from '@shared/ui';
+import { useAuth } from '../model/AuthContext';
 
 export const LoginForm = () => {
-  const profileLogin = useProfileLogin();
+  const { mockLogin } = useAuth();
+  const navigate = useNavigate();
 
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: { email: '', password: '' },
     validate: {
-      password: value =>
-        value.length < 8 ? 'Пароль должен содержать минимум 8 символов' : null,
-      email: value =>
-        /^\S+@\S+$/.test(value) ? null : 'Неверный формат email',
+      email: value => (/^\S+@\S+$/.test(value) ? null : 'Неверный формат email'),
+      password: value => (value.length >= 1 ? null : 'Введите пароль'),
     },
   });
+
+  const handleSubmit = (values: { email: string; password: string }) => {
+    mockLogin(values.email);
+    navigate('/');
+  };
 
   return (
     <Container
@@ -31,11 +35,11 @@ export const LoginForm = () => {
     >
       <PageHeader title="Вход" />
 
-      <form onSubmit={form.onSubmit(values => profileLogin.mutate(values))}>
+      <form onSubmit={form.onSubmit(handleSubmit)}>
         <Input
           mt="lg"
           label="Почта"
-          placeholder="Email"
+          placeholder="example@mail.ru"
           key={form.key('email')}
           {...form.getInputProps('email')}
         />
@@ -53,12 +57,6 @@ export const LoginForm = () => {
           <Text size="lg">Войти</Text>
         </Button>
       </form>
-
-      <Label title="Еще нет аккаунта?" mt={70} />
-
-      <Button variant="secondary" w="100%" mt="md">
-        <Text size="lg">Создать аккаунт</Text>
-      </Button>
     </Container>
   );
 };

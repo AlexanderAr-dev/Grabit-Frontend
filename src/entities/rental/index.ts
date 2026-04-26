@@ -1,5 +1,6 @@
 export * from './model/mockRentAd';
 export * from './model/useGetRentInfoById';
+export * from './ui/BookingCalendar';
 export * from './ui/LargeCard';
 export * from './ui/MediumCard';
 export * from './ui/RentalCard';

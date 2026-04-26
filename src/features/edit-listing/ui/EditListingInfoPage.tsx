@@ -1,0 +1,166 @@
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  ActionIcon,
+  Divider,
+  Flex,
+  NumberInput,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+  Title,
+  useMantineColorScheme,
+} from '@mantine/core';
+import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { mockRentAd } from '@entities/rental';
+import { Button } from '@shared/ui';
+import { Characteristic } from '@features/create-listing';
+import { EditListingLayout } from './EditListingLayout';
+
+export const EditListingInfoPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+  const numId = Number(id);
+  const listing = mockRentAd.find(a => a.id === numId) ?? mockRentAd[0];
+
+  const [title, setTitle] = useState(listing.title ?? '');
+  const [description, setDescription] = useState(listing.description ?? '');
+  const [pricePerHour, setPricePerHour] = useState<number | string>(listing.cost.payment ?? '');
+  const [priceUnit, setPriceUnit] = useState<string>(listing.cost.priceUnit ?? 'час');
+
+  const [characteristics, setCharacteristics] = useState<Characteristic[]>([
+    { label: 'Категория', value: listing.category.name },
+    { label: 'Тип', value: listing.productType === 'space' ? 'Помещение' : listing.productType === 'service' ? 'Услуга' : 'Товар' },
+  ]);
+  const [charLabel, setCharLabel] = useState('');
+  const [charValue, setCharValue] = useState('');
+
+  const addCharacteristic = () => {
+    if (!charLabel.trim() || !charValue.trim()) return;
+    setCharacteristics(prev => [...prev, { label: charLabel.trim(), value: charValue.trim() }]);
+    setCharLabel('');
+    setCharValue('');
+  };
+
+  const removeCharacteristic = (index: number) => {
+    setCharacteristics(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleNext = () => {
+    navigate(`/edit-listing/${id}/calendar`);
+  };
+
+  return (
+    <EditListingLayout>
+      <Stack gap="md">
+        <Title order={3}>Основная информация</Title>
+
+        <TextInput
+          label="Название"
+          value={title}
+          onChange={e => setTitle(e.currentTarget.value)}
+        />
+
+        <Textarea
+          label="Описание"
+          value={description}
+          onChange={e => setDescription(e.currentTarget.value)}
+          minRows={4}
+          autosize
+        />
+
+        <Flex gap="md" align="flex-end">
+          <NumberInput
+            label="Стоимость (₽)"
+            min={0}
+            value={pricePerHour}
+            onChange={setPricePerHour}
+            w={160}
+          />
+          <TextInput
+            label="Единица времени"
+            value={priceUnit}
+            onChange={e => setPriceUnit(e.currentTarget.value)}
+            placeholder="час / день / неделя"
+            w={160}
+          />
+        </Flex>
+
+        <Divider label="Характеристики" labelPosition="left" mt="sm" />
+
+        <Flex gap="sm" align="flex-end">
+          <TextInput
+            label="Название"
+            placeholder="Балкон"
+            value={charLabel}
+            onChange={e => setCharLabel(e.currentTarget.value)}
+            style={{ flex: 1 }}
+          />
+          <TextInput
+            label="Значение"
+            placeholder="Есть"
+            value={charValue}
+            onChange={e => setCharValue(e.currentTarget.value)}
+            style={{ flex: 1 }}
+            onKeyDown={e => e.key === 'Enter' && addCharacteristic()}
+          />
+          <ActionIcon
+            size={36}
+            variant="filled"
+            style={{ backgroundColor: '#FF8104', marginBottom: 1 }}
+            onClick={addCharacteristic}
+            disabled={!charLabel.trim() || !charValue.trim()}
+          >
+            <IconPlus size={18} />
+          </ActionIcon>
+        </Flex>
+
+        {characteristics.length > 0 && (
+          <Stack gap={6}>
+            {characteristics.map((char, index) => (
+              <Flex
+                key={index}
+                align="center"
+                justify="space-between"
+                px="sm"
+                py={8}
+                style={{
+                  borderRadius: 8,
+                  border: `1px solid ${isDark ? '#333' : '#e9ecef'}`,
+                  background: isDark ? '#2a2a2a' : '#f8f9fa',
+                }}
+              >
+                <Text size="sm">
+                  <Text span fw={600}>{char.label}</Text>
+                  <Text span c="dimmed"> — </Text>
+                  {char.value}
+                </Text>
+                <ActionIcon
+                  size="sm"
+                  variant="subtle"
+                  color="red"
+                  onClick={() => removeCharacteristic(index)}
+                >
+                  <IconTrash size={14} />
+                </ActionIcon>
+              </Flex>
+            ))}
+          </Stack>
+        )}
+
+        <Flex gap="md" justify="space-between" mt="xl">
+          <Button variant="secondary" onClick={() => navigate('/my-products')}>
+            Отмена
+          </Button>
+          <Button onClick={handleNext}>
+            Далее →
+          </Button>
+        </Flex>
+      </Stack>
+    </EditListingLayout>
+  );
+};

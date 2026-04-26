@@ -1,18 +1,23 @@
 import { useState } from 'react';
-import { Button, Group, Stack, Title } from '@mantine/core';
-import { DatePickerInput } from '@mantine/dates';
+import { Flex, Stack, Title } from '@mantine/core';
 
+import { Button } from '@shared/ui';
 import { StepProps } from '../model/types/StepProps';
 
 const BookingRangeStep = ({ data, updateData, next, prev }: StepProps) => {
-  const [range, setRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [startDate, setStartDate] = useState<string | null>(
+    data.booking?.availabilityRange?.start ?? null,
+  );
+  const [endDate, setEndDate] = useState<string | null>(
+    data.booking?.availabilityRange?.end ?? null,
+  );
 
   const handleNext = () => {
-    if (!range[0] || !range[1]) return;
+    if (!startDate || !endDate) return;
     updateData({
       booking: {
         ...data.booking,
-        range: { start: range[0], end: range[1] },
+        availabilityRange: { start: startDate, end: endDate },
       },
     });
     next?.();
@@ -22,17 +27,23 @@ const BookingRangeStep = ({ data, updateData, next, prev }: StepProps) => {
     <Stack>
       <Title order={2}>Период доступности</Title>
 
-      <DatePickerInput
-        type="range"
-        label="Когда доступна аренда"
-        value={range}
-        onChange={setRange}
-      />
+      <Flex gap="md">
+        <input
+          type="date"
+          value={startDate ?? ''}
+          onChange={e => setStartDate(e.currentTarget.value || null)}
+        />
+        <input
+          type="date"
+          value={endDate ?? ''}
+          onChange={e => setEndDate(e.currentTarget.value || null)}
+        />
+      </Flex>
 
-      <Group justify="space-between">
-        <Button variant="default" onClick={prev}>Назад</Button>
-        <Button onClick={handleNext}>Далее</Button>
-      </Group>
+      <Flex gap="md" justify="space-between">
+        <Button variant="secondary" onClick={prev}>Назад</Button>
+        <Button disabled={!startDate || !endDate} onClick={handleNext}>Далее</Button>
+      </Flex>
     </Stack>
   );
 };

@@ -1,7 +1,9 @@
-import { IRouterType } from '../types/IRouterType';
+import { CreateListingPage } from '@features/create-listing';
 import {
   ChatPage,
   CreateRentalPage,
+  EditListingCalendarPage,
+  EditListingInfoPage,
   HostedRentalsPage,
   LoginPage,
   ProfilePage,
@@ -14,7 +16,7 @@ import {
   UserChatsPage,
   UserRentPage,
 } from '@pages';
-import { CreateListingPage } from '@features/create-listing';
+import { IRouterType } from '@shared/types';
 
 export const routes: IRouterType[] = [
   { path: '/test-home', component: <TestHome /> },
@@ -23,12 +25,54 @@ export const routes: IRouterType[] = [
   { path: '/', component: <RentalsPage /> },
   { path: '/rent-page/:id', component: <RentPage /> },
   { path: '/reviews-page', component: <ReviewsPage /> },
-  { path: '/profile', component: <ProfilePage /> },
-  { path: '/my-products', component: <HostedRentalsPage /> },
-  { path: '/rent', component: <UserRentPage /> },
-  { path: '/chats', component: <UserChatsPage /> },
-  { path: '/chats/:chatId', component: <ChatPage /> },
-  { path: '/rentals-page', component: <RentedRentalsPage /> },
-  { path: '/create-rental', component: <CreateRentalPage /> },
-  { path: '/create-listing', component: <CreateListingPage /> },
+  {
+    path: '/profile',
+    component: <ProfilePage />,
+    private: true,
+  },
+  {
+    path: '/my-products',
+    component: <HostedRentalsPage />,
+    private: true,
+  },
+  {
+    path: '/rent',
+    component: <UserRentPage />,
+    private: true,
+  },
+  {
+    path: '/chats',
+    component: <UserChatsPage />,
+    private: true,
+  },
+  {
+    path: '/chats/:chatId',
+    component: <ChatPage />,
+    private: true,
+  },
+  {
+    path: '/rentals-page',
+    component: <RentedRentalsPage />,
+    private: true,
+  },
+  {
+    path: '/create-rental',
+    component: <CreateRentalPage />,
+    private: true,
+  },
+  {
+    path: '/create-listing',
+    component: <CreateListingPage />,
+    private: true,
+  },
+  {
+    path: '/edit-listing/:id',
+    component: <EditListingInfoPage />,
+    private: true,
+  },
+  {
+    path: '/edit-listing/:id/calendar',
+    component: <EditListingCalendarPage />,
+    private: true,
+  },
 ];

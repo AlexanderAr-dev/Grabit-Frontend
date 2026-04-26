@@ -8,15 +8,19 @@ import {
   Text,
 } from '@mantine/core';
 import { IconMapPin, IconMessageCircle } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
 
 import { IRentalDetail } from '@shared/types';
 import { Button } from '@shared/ui';
+import { BookingCalendar } from './BookingCalendar';
 
 interface RentPageViewProps {
   listing: IRentalDetail;
 }
 
 export const RentPageInfo = ({ listing }: RentPageViewProps) => {
+  const navigate = useNavigate();
+
   return (
     <>
       <Flex
@@ -28,9 +32,7 @@ export const RentPageInfo = ({ listing }: RentPageViewProps) => {
         style={{ border: '1px solid gray', borderRadius: '10px' }}
       >
         <Image
-          src={
-            listing.previewImage?.url || 'https://via.placeholder.com/400'
-          }
+          src={listing.previewImage?.url || 'https://via.placeholder.com/400'}
           h={405}
           w={400}
           bdrs={10}
@@ -56,7 +58,7 @@ export const RentPageInfo = ({ listing }: RentPageViewProps) => {
                 Цена
               </Text>
               <Text size="sm">
-                {listing.cost.payment}руб. в {listing.cost.priceUnit}
+                {listing.cost.payment} руб. / {listing.cost.priceUnit}
               </Text>
             </Box>
 
@@ -76,7 +78,7 @@ export const RentPageInfo = ({ listing }: RentPageViewProps) => {
                 </Text>
               </Group>
               <Text size="xs" c="dimmed">
-                ({listing.reviewCount || listing.reviews || 0})
+                ({listing.reviewCount || listing.reviews || 0} отзывов)
               </Text>
             </Box>
           </Group>
@@ -93,14 +95,14 @@ export const RentPageInfo = ({ listing }: RentPageViewProps) => {
             </Text>
           </Box>
 
-          <Group justify="space-between" mb="5">
+          <Group justify="space-between" mb="md">
             <Flex direction="column">
               <Text fw={600} size="md">
                 {listing.renter.name}
               </Text>
               <Group gap="lg">
                 <Text size="sm" fw={500}>
-                  {listing.renter.rating} ({listing.renter.reviewCount})
+                  {listing.renter.rating} ({listing.renter.reviewCount} отз.)
                 </Text>
                 <Group gap={2}>
                   {[...Array(5)].map((_, i) => (
@@ -119,9 +121,7 @@ export const RentPageInfo = ({ listing }: RentPageViewProps) => {
             <Image
               w={50}
               h={50}
-              src={
-                listing.renter.avatar?.url || 'https://via.placeholder.com/50'
-              }
+              src={listing.renter.avatar?.url || 'https://via.placeholder.com/50'}
               radius="xl"
               fallbackSrc="https://via.placeholder.com/50"
             />
@@ -132,34 +132,44 @@ export const RentPageInfo = ({ listing }: RentPageViewProps) => {
             variant="primary"
             leftSection={<IconMessageCircle size={18} />}
             radius="md"
+            onClick={() => navigate(`/chats/${listing.id}`)}
           >
             Написать
           </Button>
         </Card>
       </Flex>
 
-      <Flex mb={30}>
-        <Box w={400} mt={15} mr={40}>
-          <Text size="xl">Описание</Text>
-          <Text>{listing.description || 'Нет описания'}</Text>
-        </Box>
-        <Box w={400} mt={15}>
-          <Text size="xl">Характеристики</Text>
-          <Text>
-            {listing.category.name} •{' '}
-            {listing.productType === 'space'
-              ? 'Помещение'
-              : listing.productType === 'service'
-                ? 'Услуга'
-                : 'Товар'}
-          </Text>
+      <Flex justify="center" mt={20}>
+        <Box style={{ width: 832 }}>
+          <Flex gap="xl" mb={30}>
+            <Box w={400}>
+              <Text size="xl" fw={600} mb={8}>Описание</Text>
+              <Text size="sm" style={{ lineHeight: 1.6 }}>
+                {listing.description || 'Нет описания'}
+              </Text>
+            </Box>
+            <Box w={400}>
+              <Text size="xl" fw={600} mb={8}>Характеристики</Text>
+              <Text size="sm">
+                <Text span fw={600}>Категория: </Text>
+                {listing.category.name}
+              </Text>
+              <Text size="sm" mt={4}>
+                <Text span fw={600}>Тип: </Text>
+                {listing.productType === 'space'
+                  ? 'Помещение'
+                  : listing.productType === 'service'
+                    ? 'Услуга'
+                    : 'Товар'}
+              </Text>
+            </Box>
+          </Flex>
+
+          <Box mb={30}>
+            <BookingCalendar booking={listing.booking} />
+          </Box>
         </Box>
       </Flex>
-
-      <Box mb={30}>
-        <Text size="xl">Календарь бронирования</Text>
-        <Text>{listing.bookingCalendar}</Text>
-      </Box>
     </>
   );
 };

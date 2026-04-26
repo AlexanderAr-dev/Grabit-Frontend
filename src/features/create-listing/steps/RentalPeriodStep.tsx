@@ -1,8 +1,7 @@
 import dayjs from 'dayjs';
 import { useState } from 'react';
-import { Flex, Stack, Text, Title } from '@mantine/core';
+import { Flex, Stack, Text, Title, useMantineColorScheme } from '@mantine/core';
 import { Calendar } from '@mantine/dates';
-import { useMantineColorScheme } from '@mantine/core';
 
 import { componentsTheme } from '@shared/config/componentsTheme';
 import { Button } from '@shared/ui';
@@ -13,10 +12,10 @@ const RentalPeriodStep = ({ data, updateData, next, prev }: StepProps) => {
   const theme = componentsTheme.buttonTheme[colorScheme];
 
   const [startDate, setStartDate] = useState<string | null>(
-    data.booking?.rentalPeriod?.start ?? null,
+    data.booking?.availabilityRange?.start ?? null,
   );
   const [endDate, setEndDate] = useState<string | null>(
-    data.booking?.rentalPeriod?.end ?? null,
+    data.booking?.availabilityRange?.end ?? null,
   );
 
   const handleNext = () => {
@@ -24,7 +23,7 @@ const RentalPeriodStep = ({ data, updateData, next, prev }: StepProps) => {
     updateData({
       booking: {
         ...data.booking,
-        rentalPeriod: { start: startDate, end: endDate },
+        availabilityRange: { start: startDate, end: endDate },
       },
     });
     next?.();
@@ -86,8 +85,7 @@ const RentalPeriodStep = ({ data, updateData, next, prev }: StepProps) => {
             getDayProps={date => {
               const isSelected = !!endDate && dayjs(date).isSame(endDate, 'day');
               const inRange = isInRange(date);
-              const isBeforeStart =
-                !!startDate && dayjs(date).isBefore(startDate, 'day');
+              const isBeforeStart = !!startDate && dayjs(date).isBefore(startDate, 'day');
               return {
                 selected: isSelected,
                 inRange,
@@ -101,12 +99,8 @@ const RentalPeriodStep = ({ data, updateData, next, prev }: StepProps) => {
       </Flex>
 
       <Flex gap="md" justify="space-between">
-        <Button variant="secondary" onClick={prev}>
-          Назад
-        </Button>
-        <Button disabled={!startDate || !endDate} onClick={handleNext}>
-          Далее
-        </Button>
+        <Button variant="secondary" onClick={prev}>Назад</Button>
+        <Button disabled={!startDate || !endDate} onClick={handleNext}>Далее</Button>
       </Flex>
     </Stack>
   );

@@ -1,24 +1,17 @@
 import { FC } from 'react';
-import { Button as MantineButton, Group, Select, useMantineColorScheme } from '@mantine/core';
-
-import { componentsTheme } from '@shared/config';
+import { Button as MantineButton, Group, Select } from '@mantine/core';
 
 interface FilterBarProps {
-  variant?: 'primary';
   onSortChange?: (value: string | null) => void;
   onFilterChange?: (filter: string | null) => void;
   activeFilter?: string | null;
 }
 
 export const RentalsCategories: FC<FilterBarProps> = ({
-  variant = 'primary',
   onSortChange,
   onFilterChange,
   activeFilter = null,
 }) => {
-  const { colorScheme } = useMantineColorScheme();
-  const themeStyles = componentsTheme.filterBarTheme[colorScheme];
-  const variantStyles = themeStyles[variant];
 
   const sortOptions = [
     { value: 'date', label: 'Дата' },
@@ -31,7 +24,7 @@ export const RentalsCategories: FC<FilterBarProps> = ({
     { value: null, label: 'Все' },
     { value: 'product', label: 'Вещи' },
     { value: 'service', label: 'Услуги' },
-    { value: 'premises', label: 'Помещения' },
+    { value: 'space', label: 'Помещения' },
   ];
 
   return (
