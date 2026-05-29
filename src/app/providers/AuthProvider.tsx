@@ -1,9 +1,9 @@
 import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
+import { AuthService, UserService } from '@shared/api';
 import { IUserInfo } from '@shared/types';
 import { AuthContext } from '@features/auth';
-
-const MOCK_USER_KEY = 'mock_user';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -12,49 +12,47 @@ interface AuthProviderProps {
 export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<IUserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [wasUnauthorized, setWasUnauthorized] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(MOCK_USER_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as IUserInfo;
-        setUser(parsed);
-      }
-    } catch {
-      localStorage.removeItem(MOCK_USER_KEY);
-    } finally {
-      setIsLoading(false);
-    }
+    UserService.infoUser()
+      .then(res => setUser(res.data.data))
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+      setWasUnauthorized(true);
+      queryClient.clear();
+    };
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+  }, [queryClient]);
 
   const login = useCallback(() => {
-    // Заглушка — логин через форму LoginForm
+    window.location.href = AuthService.getSsoLoginUrl();
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(MOCK_USER_KEY);
+  const logout = useCallback(async () => {
+    try {
+      const logoutURL = await AuthService.logout();
+      if (logoutURL) {
+        // Инвалидируем сессию Keycloak в фоне, затем идём на главную
+        await fetch(logoutURL, { mode: 'no-cors' }).catch(() => {});
+      }
+    } catch {
+      // ignore errors, proceed with client-side logout
+    }
     setUser(null);
+    queryClient.clear();
     window.location.href = '/';
-  }, []);
-
-  const mockLogin = useCallback((email: string) => {
-    const mockUser: IUserInfo = {
-      id: 1,
-      login: email,
-      email,
-      name: email.split('@')[0] || 'Пользователь',
-      description: '',
-      phoneNumber: '',
-      isVerified: false,
-      stats: { reviews: 0, rating: 0, offers: 0 },
-      language: 'ru',
-    };
-    localStorage.setItem(MOCK_USER_KEY, JSON.stringify(mockUser));
-    setUser(mockUser);
-  }, []);
+  }, [queryClient]);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, mockLogin }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, wasUnauthorized, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

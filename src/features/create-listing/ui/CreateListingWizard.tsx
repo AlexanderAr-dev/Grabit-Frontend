@@ -1,18 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Card, Container, Progress, Text, useMantineColorScheme } from '@mantine/core';
+import { Alert, Box, Card, Container, Flex, Loader, Progress, Text, useMantineColorScheme } from '@mantine/core';
+import { IconAlertCircle } from '@tabler/icons-react';
 
+import { rentService } from '@shared/api';
 import { componentsTheme } from '@shared/config';
+import { Button } from '@shared/ui';
+import { WeekDay } from '@shared/types';
 import { CreateListingData } from '../model/types/CreateListing';
 import { StepComponent, wizardSteps } from '../model/constants/wizardSteps';
 import TypeStep from '../steps/TypeStep';
 
 const TRANSITION_MS = 180;
 const DRAFT_KEY = 'grabit_listing_draft';
-const SAVED_KEY = 'grabit_listing_saved';
 
-// Названия шагов по позиции: 0 = TypeStep, далее — по порядку из wizardSteps
-// Индекс 0 всегда TypeStep, 1..N — commonSteps
+const DAY_NUM: Record<WeekDay, string> = {
+  mon: '1', tue: '2', wed: '3', thu: '4', fri: '5', sat: '6', sun: '7',
+};
+
 const STEP_TITLES = [
   'Тип объявления',
   'Информация',
@@ -28,7 +33,6 @@ const loadDraft = (): CreateListingData => {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return { type: 'item_rent' };
     const parsed = JSON.parse(raw) as CreateListingData;
-    // media (object URLs) не переживают перезагрузку — сбрасываем
     return { ...parsed, media: undefined, previewIndex: undefined };
   } catch {
     return { type: 'item_rent' };
@@ -37,11 +41,10 @@ const loadDraft = (): CreateListingData => {
 
 const saveDraft = (data: CreateListingData) => {
   try {
-    // object URL-ы нельзя сериализовать — сохраняем без media
     const { media: _, previewIndex: __, ...rest } = data;
     localStorage.setItem(DRAFT_KEY, JSON.stringify(rest));
   } catch {
-    // игнорируем ошибки quota
+    // ignore quota errors
   }
 };
 
@@ -52,6 +55,9 @@ const CreateListingWizard = () => {
   const [stepIndex, setStepIndex] = useState(0);
   const [data, setData] = useState<CreateListingData>(loadDraft);
   const [visible, setVisible] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [createdListingId, setCreatedListingId] = useState<string | null>(null);
 
   const typeSteps: StepComponent[] = wizardSteps[data.type] ?? [];
   const allSteps: StepComponent[] = [TypeStep, ...typeSteps];
@@ -76,16 +82,93 @@ const CreateListingWizard = () => {
     }, TRANSITION_MS);
   };
 
+  const submitListing = async () => {
+    if (!data.categoryId) {
+      setSubmitError('Выберите категорию объявления.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Шаг 1: создать листинг (пропускаем при ретрае если уже создан)
+      let listingId = createdListingId;
+      if (!listingId) {
+        const listing = await rentService.createListing({
+          title: data.title ?? '',
+          description: data.description ?? '',
+          category_id: data.categoryId,
+          price_per_hour: data.pricePerHour ?? 0,
+          quantity: 1,
+          buffer_hours: 0,
+          lat: data.location?.lat,
+          lon: data.location?.lng,
+          address: data.address,
+          attributes: data.characteristics?.map(c => ({ key: c.label, value: c.value })) ?? [],
+        });
+        listingId = listing.listing_id;
+        setCreatedListingId(listingId);
+      }
+
+      // Шаг 2: установить доступность
+      if (data.booking?.availabilityRange && data.booking.enabledDays?.length) {
+        const weekday_hours: Record<string, number[]> = {};
+        data.booking.enabledDays.forEach(day => {
+          const daySchedule = data.booking!.schedule?.find(s => s.day === day);
+          weekday_hours[DAY_NUM[day]] = daySchedule
+            ? daySchedule.hours.map((on, i) => (on ? i : -1)).filter(i => i >= 0)
+            : [];
+        });
+        await rentService.setAvailability(listingId, [
+          {
+            valid_from: data.booking.availabilityRange.start,
+            valid_until: data.booking.availabilityRange.end,
+            weekday_hours,
+          },
+        ]);
+
+        // Сохраняем доступность для предзаполнения страницы редактирования
+        const savedSchedule: Record<WeekDay, boolean[]> = {} as Record<WeekDay, boolean[]>;
+        const allDays: WeekDay[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        allDays.forEach(day => {
+          const ds = data.booking!.schedule?.find(s => s.day === day);
+          savedSchedule[day] = ds ? ds.hours : Array(24).fill(false);
+        });
+        try {
+          localStorage.setItem(
+            `grabit_avail_${listingId}`,
+            JSON.stringify({
+              startDate: data.booking.availabilityRange.start,
+              endDate: data.booking.availabilityRange.end,
+              enabledDays: data.booking.enabledDays,
+              schedule: savedSchedule,
+            }),
+          );
+        } catch {
+          // ignore quota
+        }
+      }
+
+      // Шаг 3: загрузить медиа
+      await Promise.allSettled(
+        (data.media ?? [])
+          .filter(mf => mf.file)
+          .map(mf => rentService.uploadMedia(listingId!, mf.file!)),
+      );
+
+      localStorage.removeItem(DRAFT_KEY);
+      navigate('/my-products');
+    } catch (err) {
+      console.error('[CreateListing] submit error:', err);
+      setSubmitError('Не удалось создать объявление. Проверьте данные и попробуйте ещё раз.');
+      setIsSubmitting(false);
+    }
+  };
+
   const next = () => {
     if (stepIndex >= allSteps.length - 1) {
-      // Сохраняем финальный черновик и очищаем рабочий
-      try {
-        localStorage.setItem(SAVED_KEY, JSON.stringify({ ...data, media: undefined }));
-        localStorage.removeItem(DRAFT_KEY);
-      } catch {
-        // ignore
-      }
-      navigate('/my-products');
+      submitListing();
     } else {
       transition(stepIndex + 1);
     }
@@ -122,15 +205,43 @@ const CreateListingWizard = () => {
           color="#FF8104"
         />
 
-        <Box
-          style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? 'translateY(0)' : 'translateY(6px)',
-            transition: `opacity ${TRANSITION_MS}ms ease, transform ${TRANSITION_MS}ms ease`,
-          }}
-        >
-          <CurrentStep data={data} updateData={updateData} next={next} prev={prev} />
-        </Box>
+        {isSubmitting ? (
+          <Flex direction="column" align="center" gap="md" py="xl">
+            <Loader color="#FF8104" size="md" />
+            <Text size="sm" c="dimmed">Создаём объявление...</Text>
+          </Flex>
+        ) : (
+          <>
+            {submitError && (
+              <Alert
+                icon={<IconAlertCircle size={16} />}
+                color="red"
+                radius="md"
+                mb="md"
+                onClose={() => setSubmitError(null)}
+                withCloseButton
+              >
+                {submitError}
+              </Alert>
+            )}
+
+            <Box
+              style={{
+                opacity: visible ? 1 : 0,
+                transform: visible ? 'translateY(0)' : 'translateY(6px)',
+                transition: `opacity ${TRANSITION_MS}ms ease, transform ${TRANSITION_MS}ms ease`,
+              }}
+            >
+              <CurrentStep data={data} updateData={updateData} next={next} prev={prev} />
+            </Box>
+
+            {submitError && (
+              <Flex justify="flex-end" mt="md">
+                <Button onClick={submitListing}>Попробовать ещё раз</Button>
+              </Flex>
+            )}
+          </>
+        )}
       </Card>
     </Container>
   );

@@ -12,6 +12,7 @@ export interface CardPreview {
   createdAt: string;
   category?: ICategory;
   previewImage?: string;
+  status?: string;
 }
 
 export interface CardDetails extends CardPreview {}

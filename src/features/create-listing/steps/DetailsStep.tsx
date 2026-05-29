@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActionIcon,
   Box,
@@ -6,6 +6,7 @@ import {
   Flex,
   NumberInput,
   Paper,
+  Skeleton,
   Stack,
   Switch,
   Text,
@@ -14,20 +15,50 @@ import {
   Title,
 } from '@mantine/core';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
 
+import { BackendCategory } from '@shared/api';
+import { rentService } from '@shared/api';
 import { Button } from '@shared/ui';
-import { categoriesByType } from '../model/constants/categoryData';
-import { CategoryNode } from '../model/constants/Categories';
 import { Characteristic } from '../model/types/CreateListing';
 import { StepProps } from '../model/types/StepProps';
 
-// Включить/выключить обязательность заполнения полей
 const VALIDATION_ENABLED = false;
 
+interface CatNode extends BackendCategory {
+  children?: CatNode[];
+}
+
+function buildTree(cats: BackendCategory[]): CatNode[] {
+  const getChildren = (parentId: number): CatNode[] =>
+    cats
+      .filter(c => c.parent_id === parentId)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(c => ({ ...c, children: getChildren(c.id) }));
+
+  return cats
+    .filter(c => c.parent_id == null)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(root => ({ ...root, children: getChildren(root.id) }));
+}
+
+function findPath(tree: CatNode[], targetId: number): [CatNode | null, CatNode | null, CatNode | null] {
+  for (const l1 of tree) {
+    if (l1.id === targetId) return [l1, null, null];
+    for (const l2 of l1.children ?? []) {
+      if (l2.id === targetId) return [l1, l2, null];
+      for (const l3 of l2.children ?? []) {
+        if (l3.id === targetId) return [l1, l2, l3];
+      }
+    }
+  }
+  return [null, null, null];
+}
+
 interface CategoryColumnProps {
-  items: CategoryNode[];
-  selectedId?: string;
-  onSelect: (item: CategoryNode) => void;
+  items: CatNode[];
+  selectedId?: number;
+  onSelect: (item: CatNode) => void;
 }
 
 const CategoryColumn = ({ items, selectedId, onSelect }: CategoryColumnProps) => (
@@ -59,51 +90,33 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
     data.pricePerHour ?? '',
   );
 
-  // Категория
-  const rootCategories = categoriesByType[data.type] ?? [];
-
-  const [level1, setLevel1] = useState<CategoryNode | null>(() => {
-    if (!data.categoryId) return null;
-    for (const c1 of rootCategories) {
-      if (c1.id === data.categoryId) return c1;
-      for (const c2 of c1.children ?? []) {
-        if (c2.id === data.categoryId) return c1;
-        if (c2.children?.some(c3 => c3.id === data.categoryId)) return c1;
-      }
-    }
-    return null;
+  const { data: rawCategories, isLoading: catLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: rentService.getCategories,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const [level2, setLevel2] = useState<CategoryNode | null>(() => {
-    if (!data.categoryId) return null;
-    for (const c1 of rootCategories) {
-      for (const c2 of c1.children ?? []) {
-        if (c2.id === data.categoryId) return c2;
-        if (c2.children?.some(c3 => c3.id === data.categoryId)) return c2;
-      }
-    }
-    return null;
-  });
+  const rootCategories = rawCategories ? buildTree(rawCategories) : [];
 
-  const [level3, setLevel3] = useState<CategoryNode | null>(() => {
-    if (!data.categoryId) return null;
-    for (const c1 of rootCategories) {
-      for (const c2 of c1.children ?? []) {
-        const found = c2.children?.find(c3 => c3.id === data.categoryId);
-        if (found) return found;
-      }
-    }
-    return null;
-  });
+  const [level1, setLevel1] = useState<CatNode | null>(null);
+  const [level2, setLevel2] = useState<CatNode | null>(null);
+  const [level3, setLevel3] = useState<CatNode | null>(null);
 
-  // Характеристики
+  // Восстанавливаем выбранную категорию из черновика после загрузки дерева
+  useEffect(() => {
+    if (!data.categoryId || rootCategories.length === 0) return;
+    const [l1, l2, l3] = findPath(rootCategories, data.categoryId);
+    setLevel1(l1);
+    setLevel2(l2);
+    setLevel3(l3);
+  }, [rawCategories]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [characteristics, setCharacteristics] = useState<Characteristic[]>(
     data.characteristics ?? [],
   );
   const [charLabel, setCharLabel] = useState('');
   const [charValue, setCharValue] = useState('');
 
-  // Space-specific
   const [bathrooms, setBathrooms] = useState<number | string>(
     data.spaceDetails?.bathrooms ?? '',
   );
@@ -126,7 +139,7 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
     setCharacteristics(prev => prev.filter((_, i) => i !== index));
   };
 
-  const selectedCategoryId = level3?.id ?? level2?.id ?? level1?.id;
+  const selectedCategoryId: number | undefined = level3?.id ?? level2?.id ?? level1?.id;
 
   const handleNext = () => {
     if (VALIDATION_ENABLED && !title.trim()) return;
@@ -182,51 +195,59 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
       />
 
       {/* Категория */}
-      <Divider label="Категория" labelPosition="left" mt="sm" />
+      <Divider label="Категории" labelPosition="left" mt="sm" />
 
-      {level1 && level2 && level3 && (
+      {level1 && (
         <Text size="sm" c="dimmed">
           Выбрано:{' '}
           <Text span fw={600} c="dark">
-            {level1.name} → {level2.name} → {level3.name}
+            {[level1.name, level2?.name, level3?.name].filter(Boolean).join(' → ')}
           </Text>
         </Text>
       )}
 
-      <Box style={{ overflowX: 'auto' }}>
-        <Flex gap="sm" style={{ minWidth: 480 }}>
-          <Box style={{ flex: 1, minWidth: 140 }}>
-            <Text size="xs" c="dimmed" mb={6} fw={500}>Раздел</Text>
-            <CategoryColumn
-              items={rootCategories}
-              selectedId={level1?.id}
-              onSelect={item => { setLevel1(item); setLevel2(null); setLevel3(null); }}
-            />
-          </Box>
-
-          {level1?.children && (
-            <Box style={{ flex: 1, minWidth: 140 }}>
-              <Text size="xs" c="dimmed" mb={6} fw={500}>Подраздел</Text>
-              <CategoryColumn
-                items={level1.children}
-                selectedId={level2?.id}
-                onSelect={item => { setLevel2(item); setLevel3(null); }}
-              />
-            </Box>
-          )}
-
-          {level2?.children && (
+      {catLoading ? (
+        <Flex gap="sm">
+          <Skeleton height={120} width={140} radius="sm" />
+          <Skeleton height={120} width={140} radius="sm" />
+          <Skeleton height={120} width={140} radius="sm" />
+        </Flex>
+      ) : (
+        <Box style={{ overflowX: 'auto' }}>
+          <Flex gap="sm" style={{ minWidth: 480 }}>
             <Box style={{ flex: 1, minWidth: 140 }}>
               <Text size="xs" c="dimmed" mb={6} fw={500}>Категория</Text>
               <CategoryColumn
-                items={level2.children}
-                selectedId={level3?.id}
-                onSelect={item => setLevel3(item)}
+                items={rootCategories}
+                selectedId={level1?.id}
+                onSelect={item => { setLevel1(item); setLevel2(null); setLevel3(null); }}
               />
             </Box>
-          )}
-        </Flex>
-      </Box>
+
+            {level1?.children && level1.children.length > 0 && (
+              <Box style={{ flex: 1, minWidth: 140 }}>
+                <Text size="xs" c="dimmed" mb={6} fw={500}>Подкатегория</Text>
+                <CategoryColumn
+                  items={level1.children}
+                  selectedId={level2?.id}
+                  onSelect={item => { setLevel2(item); setLevel3(null); }}
+                />
+              </Box>
+            )}
+
+            {level2?.children && level2.children.length > 0 && (
+              <Box style={{ flex: 1, minWidth: 140 }}>
+                <Text size="xs" c="dimmed" mb={6} fw={500}>Уточнение</Text>
+                <CategoryColumn
+                  items={level2.children}
+                  selectedId={level3?.id}
+                  onSelect={item => setLevel3(item)}
+                />
+              </Box>
+            )}
+          </Flex>
+        </Box>
+      )}
 
       {isSpace && (
         <>

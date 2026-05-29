@@ -9,7 +9,7 @@ import {
 } from '@mantine/core';
 import { IconChevronLeft } from '@tabler/icons-react';
 
-import { mockRentAd } from '@entities/rental';
+import { useGetRentInfoById } from '@entities/rental';
 
 interface EditListingLayoutProps {
   children: ReactNode;
@@ -22,9 +22,8 @@ export const EditListingLayout = ({ children }: EditListingLayoutProps) => {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const numId = Number(id);
-  const listing = mockRentAd.find(a => a.id === numId);
-  const title = listing?.title ?? 'Объявление';
+  const { data: listing, isLoading } = useGetRentInfoById(id ?? '');
+  const title = listing?.title ?? (isLoading ? '...' : 'Объявление');
 
   const isCalendar = location.pathname.endsWith('/calendar');
   const infoPath = `/edit-listing/${id}`;
@@ -44,7 +43,6 @@ export const EditListingLayout = ({ children }: EditListingLayoutProps) => {
 
   return (
     <Container size="sm" py="xl">
-      {/* Назад */}
       <Flex
         align="center"
         gap={6}
@@ -56,13 +54,11 @@ export const EditListingLayout = ({ children }: EditListingLayoutProps) => {
         <Text size="sm" c="#FF8104">Мои объявления</Text>
       </Flex>
 
-      {/* Заголовок */}
       <Text fw={700} size="xl" mb="sm">Редактирование</Text>
       <Text c="dimmed" size="sm" mb="lg" style={{ lineHeight: 1.4 }}>
         {title}
       </Text>
 
-      {/* Вкладки */}
       <Flex gap={8} mb="xl">
         <button style={tabStyle(!isCalendar)} onClick={() => navigate(infoPath)}>
           Информация
@@ -72,7 +68,6 @@ export const EditListingLayout = ({ children }: EditListingLayoutProps) => {
         </button>
       </Flex>
 
-      {/* Контент */}
       <Box
         p="xl"
         style={{

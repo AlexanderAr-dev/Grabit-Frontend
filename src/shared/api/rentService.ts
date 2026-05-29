@@ -1,28 +1,134 @@
 import { AxiosResponse } from 'axios';
 
-import { IRentalDetail } from '../types/IRentalDetail';
-import { IRentalItem } from '../types/IRentalItem';
+import { CardPreview, IRentalDetail, IRentalItem } from '../types';
+import {
+  BackendCategory,
+  BackendListing,
+  BackendPaginatedResponse,
+  mapListing,
+  mapListingDetail,
+  mapListingToCard,
+} from './adapters';
 import { api } from './instance';
 
+interface CreateListingRequest {
+  title: string;
+  description: string;
+  category_id: number;
+  price_per_hour: number;
+  quantity: number;
+  buffer_hours: number;
+  lat?: number;
+  lon?: number;
+  address?: string;
+  attributes: { key: string; value: string }[];
+}
+
+interface UpdateListingData {
+  title?: string;
+  description?: string;
+  price_per_hour?: number;
+  attributes?: { key: string; value: string }[];
+}
+
+interface AvailabilityPeriod {
+  valid_from: string;
+  valid_until: string;
+  weekday_hours: Record<string, number[]>;
+}
+
+interface ListingsParams {
+  query?: string;
+  category_id?: number;
+  lat?: number;
+  lon?: number;
+  radius_km?: number;
+  min_price?: number;
+  max_price?: number;
+  page?: number;
+  page_size?: number;
+  owner_id?: string;
+}
+
+interface MyListingsParams {
+  status?: string;
+  page?: number;
+  page_size?: number;
+}
+
 export class rentService {
-  static async getRentLIst(
-    page: number,
-    limit: number,
-    category: string,
-    sort: string,
-  ): Promise<AxiosResponse<{ data: IRentalItem[] } & { message: string }>> {
-    const response = await api.get(
-      `/rentlist?page=${page}&limit=${limit}&category=${category}&sort=${sort}`,
-    );
-    console.log(response.data);
-    return response;
+  static async createListing(req: CreateListingRequest): Promise<BackendListing> {
+    const response = await api.post<{ data: BackendListing }>('/rent/listings', req);
+    return response.data.data;
   }
 
-  static async getRentInfo(
-    rentId: number,
-  ): Promise<AxiosResponse<{ data: IRentalDetail } & { message: string }>> {
-    const response = await api.get(`/rent-info/${rentId}`);
-    console.log(response);
-    return response;
+  static async getRentList(params?: ListingsParams): Promise<{ items: IRentalItem[]; total: number }> {
+    const response = await api.get<{ data: BackendPaginatedResponse<BackendListing> }>('/rent/listings', { params });
+    const raw = response.data.data;
+    return { items: raw.items.map(mapListing), total: raw.total };
+  }
+
+  static async getRentInfo(id: string): Promise<AxiosResponse<{ data: IRentalDetail }>> {
+    const response = await api.get<{ data: BackendListing }>(`/rent/listings/${id}`);
+    const adapted: AxiosResponse<{ data: IRentalDetail }> = {
+      ...response,
+      data: { data: mapListingDetail(response.data.data) },
+    };
+    return adapted;
+  }
+
+  static async getUserListings(userId: string, params?: { page?: number; page_size?: number }): Promise<{ items: IRentalItem[]; total: number }> {
+    return rentService.getRentList({ owner_id: userId, ...params });
+  }
+
+  static async getMyListings(params?: MyListingsParams): Promise<{ items: CardPreview[]; total: number }> {
+    const response = await api.get<{ data: BackendPaginatedResponse<BackendListing> }>('/rent/listings/my', { params });
+    const raw = response.data.data;
+    return { items: raw.items.map(mapListingToCard), total: raw.total };
+  }
+
+  static async getCategories(): Promise<BackendCategory[]> {
+    const response = await api.get<{ data: { categories: BackendCategory[] } }>('/rent/categories');
+    return response.data.data.categories;
+  }
+
+  static async getAvailableSlots({ listingId, date }: { listingId: string; date: string }): Promise<{ available_hours: number[]; date: string }> {
+    const response = await api.get<{ data: { available_hours: number[]; date: string } }>(`/rent/listings/${listingId}/slots`, { params: { date } });
+    return response.data.data;
+  }
+
+  static async updateListing(id: string, data: UpdateListingData): Promise<IRentalDetail> {
+    const response = await api.put<{ data: BackendListing }>(`/rent/listings/${id}`, data);
+    return mapListingDetail(response.data.data);
+  }
+
+  static async deleteListing(id: string): Promise<void> {
+    await api.delete(`/rent/listings/${id}`);
+  }
+
+  static async pauseListing(id: string): Promise<void> {
+    await api.post(`/rent/listings/${id}/pause`);
+  }
+
+  static async resumeListing(id: string): Promise<void> {
+    await api.post(`/rent/listings/${id}/resume`);
+  }
+
+  static async setAvailability(id: string, periods: AvailabilityPeriod[]): Promise<void> {
+    await api.put(`/rent/listings/${id}/availability`, { periods });
+  }
+
+  static async uploadMedia(id: string, file: File): Promise<{ media_id: string; url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post<{ data: { media_id: string; url: string } }>(
+      `/rent/listings/${id}/media`,
+      formData,
+    );
+    return response.data.data;
+  }
+
+  static async deleteMedia(listingId: string, mediaId: string): Promise<void> {
+    await api.delete(`/rent/listings/${listingId}/media/${mediaId}`);
   }
 }

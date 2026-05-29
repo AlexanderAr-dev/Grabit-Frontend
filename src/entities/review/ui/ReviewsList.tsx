@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Avatar,
   Box,
   Button,
   Card,
@@ -11,11 +10,14 @@ import {
   Text,
 } from '@mantine/core';
 
+import { UserMiniCard } from '@entities/user/ui/UserMiniCard';
 import { IReview } from '@shared/types';
 
 interface ReviewsListProps {
   reviews: IReview[];
   onShowAll?: () => void;
+  hasMore?: boolean;
+  isLoading?: boolean;
 }
 
 const ReviewCard = ({ review }: { review: IReview }) => {
@@ -31,26 +33,19 @@ const ReviewCard = ({ review }: { review: IReview }) => {
       style={{ borderColor: '#ececec', transition: 'all 0.2s ease' }}
     >
       <Flex justify="space-between" align="flex-start">
-        <Group gap="md">
-          <Avatar
-            src={review.author.avatar?.url || 'https://via.placeholder.com/50'}
-            size={56}
-            radius="xl"
-          />
-          <Box>
-            <Text fw={700} size="md">{review.author.name}</Text>
-            <Group gap={8} mt={4}>
-              <Text fw={600} size="sm">{review.rating.toFixed(1)}</Text>
-              <Rating value={review.rating} fractions={2} readOnly size="sm" />
-            </Group>
-          </Box>
-        </Group>
-        <Text size="sm" c="dimmed">
-          {new Date(review.createdDate).toLocaleDateString('ru-RU')}
-        </Text>
+        <Box style={{ flex: 1 }}>
+          <UserMiniCard userId={review.authorId} ratingType="renter" />
+        </Box>
+        <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
+          <Group gap={8}>
+            <Text fw={600} size="sm">{review.rating.toFixed(1)}</Text>
+            <Rating value={review.rating} fractions={2} readOnly size="sm" />
+          </Group>
+          <Text size="sm" c="dimmed">
+            {new Date(review.createdDate).toLocaleDateString('ru-RU')}
+          </Text>
+        </Stack>
       </Flex>
-
-      <Text fw={600} size="lg" mt="md">{review.adName}</Text>
 
       <Text
         size="sm"
@@ -82,7 +77,7 @@ const ReviewCard = ({ review }: { review: IReview }) => {
   );
 };
 
-export const ReviewsList = ({ reviews, onShowAll }: ReviewsListProps) => {
+export const ReviewsList = ({ reviews, onShowAll, hasMore = false, isLoading = false }: ReviewsListProps) => {
   return (
     <Box maw={900} mx="auto" mt={50}>
       <Text size="xl" fw={700} mb="xl">Отзывы</Text>
@@ -91,17 +86,20 @@ export const ReviewsList = ({ reviews, onShowAll }: ReviewsListProps) => {
           <ReviewCard key={review.id} review={review} />
         ))}
       </Stack>
-      <Flex justify="center" mt="xl">
-        <Button
-          radius="xl"
-          size="md"
-          variant="filled"
-          style={{ backgroundColor: '#f08c00' }}
-          onClick={onShowAll}
-        >
-          Показать больше отзывов
-        </Button>
-      </Flex>
+      {hasMore && (
+        <Flex justify="center" mt="xl">
+          <Button
+            radius="xl"
+            size="md"
+            variant="filled"
+            style={{ backgroundColor: '#f08c00' }}
+            loading={isLoading}
+            onClick={onShowAll}
+          >
+            Показать больше отзывов
+          </Button>
+        </Flex>
+      )}
     </Box>
   );
 };

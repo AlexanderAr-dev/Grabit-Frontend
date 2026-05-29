@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -24,15 +24,9 @@ const MediaStep = ({ data, updateData, next, prev }: StepProps) => {
   const [files, setFiles] = useState<MediaFile[]>(data.media ?? []);
   const [previewIndex, setPreviewIndex] = useState<number>(data.previewIndex ?? 0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const filesRef = useRef(files);
-  filesRef.current = files;
 
-  // Отзываем object URL-ы при анмаунте, чтобы не было утечки памяти
-  useEffect(() => {
-    return () => {
-      filesRef.current.forEach(f => URL.revokeObjectURL(f.url));
-    };
-  }, []);
+  // object URL-ы НЕ освобождаем при анмаунте — они нужны wizard-у для отображения
+  // и uploadMedia. Освобождение происходит явно при удалении файла пользователем.
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? []);
@@ -40,6 +34,7 @@ const MediaStep = ({ data, updateData, next, prev }: StepProps) => {
       url: URL.createObjectURL(f),
       name: f.name,
       type: f.type.startsWith('video') ? 'video' : 'image',
+      file: f,
     }));
     setFiles(prev => [...prev, ...newFiles]);
     e.target.value = '';

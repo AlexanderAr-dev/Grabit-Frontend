@@ -1,8 +1,9 @@
-import { AppShell, Container } from '@mantine/core';
+import { AppShell, Box, Container } from '@mantine/core';
 
 import { routes } from '@shared/config/routes';
 import { useThemeBackground } from '@shared/lib';
 import { Routing } from '@app/router/Routing';
+import { BottomNav } from '@widgets/bottom-nav';
 import { Header } from '@widgets/header';
 
 export const AppLayout = () => {
@@ -17,7 +18,10 @@ export const AppLayout = () => {
         <Container size={865}>
           <Routing routes={routes} />
         </Container>
+        {/* отступ под нижнюю панель на мобильном */}
+        <Box hiddenFrom="sm" style={{ height: 60 }} />
       </AppShell.Main>
+      <BottomNav />
     </AppShell>
   );
 };

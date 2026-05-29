@@ -1,4 +1,5 @@
 export interface IMediaType {
-  id: number;
+  id: string | number;
   url: string;
+  mediaType?: string;
 }

@@ -1,67 +1,90 @@
 import { useMemo, useState } from 'react';
-import { Flex } from '@mantine/core';
+import { Flex, Text } from '@mantine/core';
+import { useDebouncedValue } from '@mantine/hooks';
+import { useQuery } from '@tanstack/react-query';
 
-import { mockRentItems } from '../model/mockRentItems';
+import { rentService } from '@shared/api';
+import { RentCardList } from '@widgets/rental-card-list';
 import { RentalsCategories } from './RentalsCategories';
 import { SearchInput } from './SearchInput';
-import { RentCardList } from '@widgets/rental-card-list';
 
 export const RentalsView = () => {
+  const [inputValue, setInputValue] = useState('');
   const [searchValue, setSearchValue] = useState('');
-  const [productType, setProductType] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [sortValue, setSortValue] = useState<string | null>(null);
+  const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
+  const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
+  const [debouncedMin] = useDebouncedValue(minPrice, 600);
+  const [debouncedMax] = useDebouncedValue(maxPrice, 600);
 
-  const filteredItems = useMemo(() => {
-    let items = mockRentItems.filter(item => {
-      const matchesSearch =
-        item.title.toLowerCase().includes(searchValue.toLowerCase()) ||
-        item.address.toLowerCase().includes(searchValue.toLowerCase());
-      const matchesType = productType ? item.productType === productType : true;
-      return matchesSearch && matchesType;
-    });
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['listings', searchValue, categoryId, debouncedMin, debouncedMax],
+    queryFn: () =>
+      rentService.getRentList({
+        query: searchValue || undefined,
+        category_id: categoryId ?? undefined,
+        min_price: debouncedMin,
+        max_price: debouncedMax,
+        page: 1,
+        page_size: 50,
+      }),
+  });
+
+  const sortedItems = useMemo(() => {
+    if (!data?.items) return [];
+    let items = [...data.items];
 
     if (sortValue) {
       switch (sortValue) {
         case 'date':
-          items = [...items].sort(
-            (a, b) =>
-              new Date(b.createdDate).getTime() -
-              new Date(a.createdDate).getTime(),
-          );
+          items.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
           break;
         case 'price_asc':
-          items = [...items].sort((a, b) => a.cost.payment - b.cost.payment);
+          items.sort((a, b) => a.cost.payment - b.cost.payment);
           break;
         case 'price_desc':
-          items = [...items].sort((a, b) => b.cost.payment - a.cost.payment);
+          items.sort((a, b) => b.cost.payment - a.cost.payment);
           break;
         case 'popular':
-          items = [...items].sort(
-            (a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0),
-          );
+          items.sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0));
           break;
       }
     }
 
     return items;
-  }, [searchValue, productType, sortValue]);
+  }, [data, sortValue]);
 
   return (
     <>
       <Flex gap="md" justify="center" align="center" direction="column">
         <SearchInput
-          value={searchValue}
-          onChange={event => setSearchValue(event.currentTarget.value)}
+          value={inputValue}
+          onChange={event => setInputValue(event.currentTarget.value)}
+          onKeyDown={event => {
+            if (event.key === 'Enter') {
+              setSearchValue(inputValue);
+            }
+          }}
         />
         <RentalsCategories
-          activeFilter={productType}
-          onFilterChange={setProductType}
           onSortChange={setSortValue}
+          selectedCategoryId={categoryId}
+          onCategorySelect={setCategoryId}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          onMinPriceChange={setMinPrice}
+          onMaxPriceChange={setMaxPrice}
         />
       </Flex>
 
       <div style={{ padding: 20, minHeight: '100vh' }}>
-        <RentCardList items={filteredItems} />
+        {isError && (
+          <Flex justify="center" mt={40}>
+            <Text c="dimmed">Не удалось загрузить объявления. Проверьте подключение к серверу.</Text>
+          </Flex>
+        )}
+        {!isError && <RentCardList items={sortedItems} isLoading={isLoading} />}
       </div>
     </>
   );

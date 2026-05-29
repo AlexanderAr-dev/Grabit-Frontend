@@ -23,16 +23,28 @@ export const Button: FC<ButtonProps> = ({
   ...props
 }) => {
   const { colorScheme } = useMantineColorScheme();
-
   const themeStyles = componentsTheme.buttonTheme[colorScheme];
-  const variantStyles = themeStyles[variant];
+
+  if (variant === 'primary') {
+    return (
+      <MantineButton
+        type={type}
+        loading={isLoading}
+        color="orange"
+        style={style}
+        {...props}
+      >
+        {children}
+      </MantineButton>
+    );
+  }
 
   return (
     <MantineButton
       type={type}
       loading={isLoading}
       style={{
-        backgroundColor: variantStyles.backgroundColor,
+        backgroundColor: themeStyles[variant].backgroundColor,
         ...style,
       }}
       {...props}

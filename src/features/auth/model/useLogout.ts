@@ -1,13 +1,6 @@
-import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-
-import { AuthService } from '@shared/api';
+import { useAuth } from './AuthContext';
 
 export const useProfileLogout = () => {
-  const navigate = useNavigate();
-
-  return useMutation({
-    mutationFn: () => AuthService.logout(),
-    onSuccess: () => navigate('/'),
-  });
+  const { logout } = useAuth();
+  return { mutate: logout };
 };

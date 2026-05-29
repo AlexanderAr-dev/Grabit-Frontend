@@ -5,7 +5,7 @@ const makeHours = (from: number, to: number): boolean[] =>
 
 export const mockRentAd: IRentalDetail[] = [
   {
-    id: 1,
+    id: '1',
     title: 'Ремонт квартир под ключ',
     cost: { payment: 134, priceUnit: 'день' },
     category: { id: 1, name: 'Ремонт' },
@@ -46,7 +46,7 @@ export const mockRentAd: IRentalDetail[] = [
     },
   },
   {
-    id: 2,
+    id: '2',
     title: 'Аренда велосипедов',
     cost: { payment: 500, priceUnit: 'час' },
     category: { id: 2, name: 'Спорт' },
@@ -89,7 +89,7 @@ export const mockRentAd: IRentalDetail[] = [
     },
   },
   {
-    id: 3,
+    id: '3',
     title: 'Фотостудия для мероприятий',
     cost: { payment: 2500, priceUnit: 'час' },
     category: { id: 3, name: 'Фото/Видео' },
@@ -131,7 +131,7 @@ export const mockRentAd: IRentalDetail[] = [
     },
   },
   {
-    id: 4,
+    id: '4',
     title: 'Аренда перфоратора Bosch',
     cost: { payment: 800, priceUnit: 'день' },
     category: { id: 4, name: 'Инструменты' },
@@ -173,7 +173,7 @@ export const mockRentAd: IRentalDetail[] = [
     },
   },
   {
-    id: 5,
+    id: '5',
     title: 'Конференц-зал на 20 человек',
     cost: { payment: 1200, priceUnit: 'час' },
     category: { id: 5, name: 'Офис' },
@@ -214,7 +214,7 @@ export const mockRentAd: IRentalDetail[] = [
     },
   },
   {
-    id: 6,
+    id: '6',
     title: 'Репетитор по математике',
     cost: { payment: 800, priceUnit: 'час' },
     category: { id: 6, name: 'Образование' },
@@ -254,7 +254,7 @@ export const mockRentAd: IRentalDetail[] = [
     },
   },
   {
-    id: 7,
+    id: '7',
     title: 'Уютная квартира-студия',
     cost: { payment: 3500, priceUnit: 'день' },
     category: { id: 7, name: 'Жильё' },
@@ -297,7 +297,7 @@ export const mockRentAd: IRentalDetail[] = [
     },
   },
   {
-    id: 8,
+    id: '8',
     title: 'Аренда автомобильного прицепа',
     cost: { payment: 1500, priceUnit: 'день' },
     category: { id: 8, name: 'Транспорт' },

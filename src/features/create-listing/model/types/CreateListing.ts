@@ -42,11 +42,12 @@ export interface MediaFile {
   url: string;   // object URL — живёт только в текущей сессии
   name: string;
   type: 'image' | 'video';
+  file?: File;   // оригинальный File для загрузки на сервер
 }
 
 export interface CreateListingData {
   type: ListingType;
-  categoryId?: string;
+  categoryId?: number;
   title?: string;
   description?: string;
   pricePerHour?: number;

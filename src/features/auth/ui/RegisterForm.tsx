@@ -1,29 +1,11 @@
-import {
-  Button,
-  Container,
-  NativeSelect,
-  PasswordInput,
-  Text,
-  TextInput,
-} from '@mantine/core';
-import { useForm } from '@mantine/form';
+import { Button, Container, Text } from '@mantine/core';
 
-import { useProfileRegister } from '../model/useRegister';
+import { AuthService } from '@shared/api';
 
 export const RegisterForm = () => {
-  const profileRegister = useProfileRegister();
-  const form = useForm({
-    mode: 'uncontrolled',
-    initialValues: { email: '', password: '', login: '' },
-    validate: {
-      password: value =>
-        value.length < 8 ? 'Пароль должен быть длинее 8 символов' : null,
-      email: value =>
-        /^\S+@\S+$/.test(value) ? null : 'Неправильная почта',
-      login: value =>
-        value.length < 8 ? 'Логин должен быть длинее 8 символов' : null,
-    },
-  });
+  const handleRegister = () => {
+    window.location.href = AuthService.getSsoLoginUrl();
+  };
 
   return (
     <Container
@@ -41,52 +23,13 @@ export const RegisterForm = () => {
       >
         <h1>Регистрация</h1>
       </Text>
-      <form onSubmit={form.onSubmit(values => profileRegister.mutate(values))}>
-        <TextInput
-          c="white"
-          mt="lg"
-          label={<Text size="lg">Логин</Text>}
-          placeholder="Login"
-          key={form.key('login')}
-          {...form.getInputProps('login')}
-        />
-        <TextInput
-          c="white"
-          mt="lg"
-          label={<Text size="lg">Почта</Text>}
-          placeholder="Email"
-          key={form.key('email')}
-          {...form.getInputProps('email')}
-        />
-        <PasswordInput
-          c="white"
-          mt="lg"
-          label={<Text size="lg">Пароль</Text>}
-          key={form.key('password')}
-          {...form.getInputProps('password')}
-        />
-        <PasswordInput
-          c="white"
-          mt="lg"
-          label={<Text size="lg">Подтвердите пароль</Text>}
-        />
-        <NativeSelect
-          label="Выбор языка"
-          data={['Русский', 'Английский']}
-        />
-        <Button type="submit" mt={40} bg="#EA9432" w="100%">
-          <Text size="lg">Зарегистрироваться</Text>
-        </Button>
-      </form>
-      <Text
-        size="xl"
-        c="white"
-        style={{ textAlign: 'center', marginTop: '70px' }}
-      >
-        Уже есть аккаунт?
+
+      <Text size="sm" c="dimmed" mb="xl" style={{ textAlign: 'center' }}>
+        Регистрация и вход выполняются через единый аккаунт (SSO).
       </Text>
-      <Button bg="#667291" w="100%">
-        <Text size="lg">Войти</Text>
+
+      <Button color="orange" w="100%" onClick={handleRegister}>
+        <Text size="lg">Зарегистрироваться / Войти</Text>
       </Button>
     </Container>
   );

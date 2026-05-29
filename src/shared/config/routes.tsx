@@ -5,9 +5,9 @@ import {
   EditListingCalendarPage,
   EditListingInfoPage,
   HostedRentalsPage,
-  LoginPage,
+  NotFoundPage,
   ProfilePage,
-  RegisterPage,
+  PublicProfilePage,
   RentalsPage,
   RentedRentalsPage,
   RentPage,
@@ -20,11 +20,10 @@ import { IRouterType } from '@shared/types';
 
 export const routes: IRouterType[] = [
   { path: '/test-home', component: <TestHome /> },
-  { path: '/login', component: <LoginPage /> },
-  { path: '/register', component: <RegisterPage /> },
   { path: '/', component: <RentalsPage /> },
   { path: '/rent-page/:id', component: <RentPage /> },
   { path: '/reviews-page', component: <ReviewsPage /> },
+  { path: '/users/:userId', component: <PublicProfilePage /> },
   {
     path: '/profile',
     component: <ProfilePage />,
@@ -75,4 +74,5 @@ export const routes: IRouterType[] = [
     component: <EditListingCalendarPage />,
     private: true,
   },
+  { path: '*', component: <NotFoundPage /> },
 ];

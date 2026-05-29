@@ -1,18 +1,27 @@
 import { IMediaType } from './IMediaType';
 
 export interface IUserInfo {
-  id: number;
+  id: string;
   login: string;
-  isVerified?: boolean;
+  isVerified?: boolean | null;
   email: string;
   name: string;
-  description: string;
-  phoneNumber: string;
+  firstName: string;
+  lastName: string;
+  description?: string | null;
+  phoneNumber?: string;
   avatar?: IMediaType;
   stats: {
     reviews: number;
     rating: number;
-    offers: number;
+    offers?: number | null;
   };
-  language: string;
+  ratingAsOwner: number;
+  ratingAsRenter: number;
+  reviewCountAsOwner: number;
+  reviewCountAsRenter: number;
+  birthDate?: string;
+  gender?: string;
+  profileComplete?: boolean;
+  language?: string | null;
 }

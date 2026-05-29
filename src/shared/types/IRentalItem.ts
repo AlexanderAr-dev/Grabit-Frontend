@@ -2,18 +2,20 @@ import { ICategory } from './ICategory';
 import { IMediaType } from './IMediaType';
 import { IPriceInfo } from './IPriceInfo';
 
-type ProductType = 'product' | 'space' | 'service';
+export type ProductType = 'product' | 'space' | 'service';
 
 export interface IRentalItem {
-  id: number;
+  id: string;
   title: string;
   cost: IPriceInfo;
   category: ICategory;
-  productType: ProductType;
+  productType: ProductType | null;
   address: string;
   rating: number | null;
   reviewCount: number | null;
   previewImage?: IMediaType;
   description?: string;
   createdDate: string;
+  quantity?: number;
+  status?: string;
 }

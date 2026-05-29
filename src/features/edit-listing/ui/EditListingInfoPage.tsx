@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ActionIcon,
   Divider,
   Flex,
   NumberInput,
+  Skeleton,
   Stack,
   Text,
   Textarea,
@@ -13,31 +14,66 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
-import { mockRentAd } from '@entities/rental';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useGetRentInfoById } from '@entities/rental';
+import { rentService } from '@shared/api';
 import { Button } from '@shared/ui';
 import { Characteristic } from '@features/create-listing';
 import { EditListingLayout } from './EditListingLayout';
+import { EditMediaSection } from './EditMediaSection';
 
 export const EditListingInfoPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
-  const numId = Number(id);
-  const listing = mockRentAd.find(a => a.id === numId) ?? mockRentAd[0];
 
-  const [title, setTitle] = useState(listing.title ?? '');
-  const [description, setDescription] = useState(listing.description ?? '');
-  const [pricePerHour, setPricePerHour] = useState<number | string>(listing.cost.payment ?? '');
-  const [priceUnit, setPriceUnit] = useState<string>(listing.cost.priceUnit ?? 'час');
+  const { data: listing, isLoading } = useGetRentInfoById(id ?? '');
 
-  const [characteristics, setCharacteristics] = useState<Characteristic[]>([
-    { label: 'Категория', value: listing.category.name },
-    { label: 'Тип', value: listing.productType === 'space' ? 'Помещение' : listing.productType === 'service' ? 'Услуга' : 'Товар' },
-  ]);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [pricePerHour, setPricePerHour] = useState<number | string>('');
+  const [characteristics, setCharacteristics] = useState<Characteristic[]>([]);
   const [charLabel, setCharLabel] = useState('');
   const [charValue, setCharValue] = useState('');
+  const [initialized, setInitialized] = useState(false);
+
+  // Reset form when navigating between different listings
+  useEffect(() => {
+    setInitialized(false);
+  }, [id]);
+
+  useEffect(() => {
+    if (listing && !initialized) {
+      setTitle(listing.title ?? '');
+      setDescription(listing.description ?? '');
+      setPricePerHour(listing.cost.payment ?? '');
+      setCharacteristics(
+        (listing.attributes ?? []).map(a => ({ label: a.key, value: a.value })),
+      );
+      setInitialized(true);
+    }
+  }, [listing, initialized]);
+
+  const { mutate: saveInfo, isPending: isSaving } = useMutation({
+    mutationFn: () => {
+      if (!id) return Promise.reject(new Error('Missing id'));
+      return rentService.updateListing(id, {
+        title,
+        description,
+        price_per_hour: Number(pricePerHour),
+        attributes: characteristics.map(c => ({ key: c.label, value: c.value })),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rentAd', id] });
+      queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+      navigate(`/edit-listing/${id}/calendar`);
+    },
+  });
 
   const addCharacteristic = () => {
     if (!charLabel.trim() || !charValue.trim()) return;
@@ -50,9 +86,18 @@ export const EditListingInfoPage = () => {
     setCharacteristics(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleNext = () => {
-    navigate(`/edit-listing/${id}/calendar`);
-  };
+  if (isLoading) {
+    return (
+      <EditListingLayout>
+        <Stack gap="md">
+          <Skeleton height={28} width="40%" />
+          <Skeleton height={40} />
+          <Skeleton height={100} />
+          <Skeleton height={40} width="50%" />
+        </Stack>
+      </EditListingLayout>
+    );
+  }
 
   return (
     <EditListingLayout>
@@ -73,22 +118,21 @@ export const EditListingInfoPage = () => {
           autosize
         />
 
-        <Flex gap="md" align="flex-end">
-          <NumberInput
-            label="Стоимость (₽)"
-            min={0}
-            value={pricePerHour}
-            onChange={setPricePerHour}
-            w={160}
+        <NumberInput
+          label="Стоимость (₽/час)"
+          min={0}
+          value={pricePerHour}
+          onChange={setPricePerHour}
+          w={200}
+        />
+
+        <Divider mt="sm" />
+        {id && (
+          <EditMediaSection
+            listingId={id}
+            media={listing?.media ?? []}
           />
-          <TextInput
-            label="Единица времени"
-            value={priceUnit}
-            onChange={e => setPriceUnit(e.currentTarget.value)}
-            placeholder="час / день / неделя"
-            w={160}
-          />
-        </Flex>
+        )}
 
         <Divider label="Характеристики" labelPosition="left" mt="sm" />
 
@@ -156,8 +200,8 @@ export const EditListingInfoPage = () => {
           <Button variant="secondary" onClick={() => navigate('/my-products')}>
             Отмена
           </Button>
-          <Button onClick={handleNext}>
-            Далее →
+          <Button onClick={() => saveInfo()} isLoading={isSaving} disabled={!id}>
+            Сохранить и далее →
           </Button>
         </Flex>
       </Stack>

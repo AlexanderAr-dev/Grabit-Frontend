@@ -6,9 +6,9 @@ interface AuthContextType {
   user: IUserInfo | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  wasUnauthorized: boolean;
   login: () => void;
   logout: () => void;
-  mockLogin: (email: string) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

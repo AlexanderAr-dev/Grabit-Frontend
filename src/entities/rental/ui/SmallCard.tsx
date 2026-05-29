@@ -49,7 +49,8 @@ export const SmallCard: FC<SmallCardProps> = ({
     >
       <Card.Section>
         <Image
-          src={previewImage?.url || '/placeholder-image.jpg'}
+          src={previewImage?.url || '/placeholder.jpg'}
+          fallbackSrc="/placeholder.jpg"
           height={200}
           alt={title}
         />
@@ -62,7 +63,7 @@ export const SmallCard: FC<SmallCardProps> = ({
             size="sm"
             c={colorScheme === 'dark' ? 'gray.4' : 'gray.6'}
           >
-            {createdDate}
+            {new Date(createdDate).toLocaleDateString('ru-RU')}
           </Text>
         </Group>
 

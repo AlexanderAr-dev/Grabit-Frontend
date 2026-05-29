@@ -22,11 +22,18 @@ export interface BookingSettings {
   schedule?: DaySchedule[];
 }
 
+export interface IRentalAttribute {
+  key: string;
+  value: string;
+}
+
 export interface IRentalDetail extends IRentalItem {
   media?: IMediaType[];
-  renter: IOwner;
+  renter?: IOwner;
   bookingCalendar: string;
   reviews: number;
   booking?: BookingSettings;
   coordinates?: string; // "lat,lng"
+  ownerId?: string;
+  attributes?: IRentalAttribute[];
 }

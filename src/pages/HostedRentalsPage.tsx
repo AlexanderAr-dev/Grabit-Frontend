@@ -1,53 +1,45 @@
 import { FC, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ActionIcon, Box, Container, Flex, SimpleGrid, Text } from '@mantine/core';
-import { IconEdit } from '@tabler/icons-react';
+import {
+  Box,
+  Card,
+  Container,
+  Flex,
+  SegmentedControl,
+  SimpleGrid,
+  Skeleton,
+  Text,
+} from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
 
-import { CardPreview } from '@shared/types';
+import { rentService } from '@shared/api';
 import { Button } from '@shared/ui';
 import { MediumCard } from '@entities/rental';
 import { SearchInput } from '@features/search-rentals';
 
-const mockCards: CardPreview[] = [
-  {
-    id: '1',
-    title: 'Ремонт квартир под ключ',
-    price: 134,
-    priceUnit: 'день',
-    location: 'Р-н Советский',
-    rating: 4.5,
-    reviewCount: 12,
-    shortDescription: 'Ремонт под ключ с гарантией качества: быстро, аккуратно и по доступной цене.',
-    createdAt: '20 дек 2025',
-    category: { id: 1, name: 'services' },
-    previewImage: 'https://avatars.dzeninfra.ru/get-zen_doc/271828/pub_6672b69ac44ca74a3aa7ded9_6672b7d4867ea0000933d652/scale_1200',
-  },
-  {
-    id: '4',
-    title: 'Аренда перфоратора Bosch',
-    price: 800,
-    priceUnit: 'день',
-    location: 'Р-н Октябрьский',
-    rating: 4.8,
-    reviewCount: 34,
-    shortDescription: 'Мощный перфоратор Bosch GBH 2-26 DRE. Идеален для сверления бетона, кирпича, камня.',
-    createdAt: '10 фев 2026',
-    category: { id: 4, name: 'tools' },
-    previewImage: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400',
-  },
+const STATUS_OPTIONS = [
+  { value: '',       label: 'Все'            },
+  { value: 'active', label: 'Активные'       },
+  { value: 'paused', label: 'Приостановлены' },
 ];
 
 export const HostedRentalsPage: FC = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
-  const filtered = mockCards.filter(c =>
+  const { data, isLoading } = useQuery({
+    queryKey: ['my-listings', statusFilter],
+    queryFn: () => rentService.getMyListings(statusFilter ? { status: statusFilter } : undefined),
+  });
+
+  const filtered = (data?.items ?? []).filter(c =>
     c.title.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
     <Container size="xl" py="xl">
-      <Flex gap="md" justify="center" align="center" direction="row" pb={20}>
+      <Flex gap="md" justify="center" align="center" direction="row" pb={16}>
         <SearchInput
           value={search}
           onChange={e => setSearch(e.currentTarget.value)}
@@ -57,48 +49,61 @@ export const HostedRentalsPage: FC = () => {
         </Button>
       </Flex>
 
+      <Flex justify="center" pb={20}>
+        <SegmentedControl
+          value={statusFilter}
+          onChange={setStatusFilter}
+          data={STATUS_OPTIONS}
+          radius="md"
+        />
+      </Flex>
+
+      {isLoading && (
+        <SimpleGrid cols={{ base: 1, lg: 1 }} spacing="lg">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} shadow="md" radius="lg" style={{ overflow: 'hidden' }}>
+              <Flex direction="row" gap="md">
+                <Skeleton height={230} width={230} radius="md" />
+                <Flex direction="column" gap={8} style={{ flex: 1 }}>
+                  <Skeleton height={22} width="70%" />
+                  <Skeleton height={14} width="90%" />
+                  <Skeleton height={14} width="80%" />
+                  <Skeleton height={20} width="30%" mt={8} />
+                  <Skeleton height={14} width="50%" />
+                </Flex>
+              </Flex>
+            </Card>
+          ))}
+        </SimpleGrid>
+      )}
+
       <SimpleGrid cols={{ base: 1, lg: 1 }} spacing="lg">
         {filtered.map(card => (
-          <Box key={card.id} style={{ position: 'relative' }}>
-            <MediumCard variant="primary" {...card} />
-            <ActionIcon
-              size={40}
-              radius="md"
-              variant="filled"
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 12,
-                backgroundColor: '#FF8104',
-                zIndex: 1,
-              }}
-              onClick={() => navigate(`/edit-listing/${card.id}`)}
-              title="Редактировать"
-            >
-              <IconEdit size={20} color="#fff" />
-            </ActionIcon>
-            <Box
-              style={{
-                position: 'absolute',
-                bottom: 12,
-                right: 12,
-                zIndex: 1,
-              }}
-            >
-              <Button
-                variant="secondary"
-                radius="md"
-                style={{ height: 32, fontSize: 13, padding: '0 12px' }}
-                onClick={() => navigate(`/edit-listing/${card.id}`)}
-              >
-                <Text size="xs">Редактировать</Text>
-              </Button>
-            </Box>
+          <Box
+            key={card.id}
+            onClick={() => navigate(`/rent-page/${card.id}`)}
+            style={{ cursor: 'pointer' }}
+          >
+            <MediumCard
+              variant="primary"
+              {...card}
+              actions={
+                <Box onClick={(e) => { e.stopPropagation(); navigate(`/edit-listing/${card.id}`); }}>
+                  <Button
+                    variant="secondary"
+                    radius="md"
+                    style={{ height: 32, fontSize: 13, padding: '0 12px' }}
+                  >
+                    <Text size="xs">Редактировать</Text>
+                  </Button>
+                </Box>
+              }
+            />
           </Box>
         ))}
       </SimpleGrid>
 
-      {filtered.length === 0 && (
+      {!isLoading && filtered.length === 0 && (
         <Flex justify="center" mt={40}>
           <Text c="dimmed">Объявления не найдены</Text>
         </Flex>

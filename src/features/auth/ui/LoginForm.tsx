@@ -1,14 +1,10 @@
-import { useNavigate } from 'react-router-dom';
 import { Container, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 
+import { AuthService } from '@shared/api';
 import { Button, Input, PageHeader } from '@shared/ui';
-import { useAuth } from '../model/AuthContext';
 
 export const LoginForm = () => {
-  const { mockLogin } = useAuth();
-  const navigate = useNavigate();
-
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: { email: '', password: '' },
@@ -18,9 +14,8 @@ export const LoginForm = () => {
     },
   });
 
-  const handleSubmit = (values: { email: string; password: string }) => {
-    mockLogin(values.email);
-    navigate('/');
+  const handleSubmit = () => {
+    window.location.href = AuthService.getSsoLoginUrl();
   };
 
   return (
@@ -53,7 +48,11 @@ export const LoginForm = () => {
           {...form.getInputProps('password')}
         />
 
-        <Button type="submit" variant="primary" mt={40} w="100%">
+        <Text size="xs" c="dimmed" mt="md">
+          Вы будете перенаправлены на страницу входа через единый аккаунт.
+        </Text>
+
+        <Button type="submit" variant="primary" mt={16} w="100%">
           <Text size="lg">Войти</Text>
         </Button>
       </form>

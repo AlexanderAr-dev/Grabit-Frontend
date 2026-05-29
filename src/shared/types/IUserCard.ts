@@ -2,6 +2,6 @@ import { IMediaType } from './IMediaType';
 
 export interface IUserCard {
   id: number;
-  name: string;
+  name: string | null;
   avatar?: IMediaType;
 }
