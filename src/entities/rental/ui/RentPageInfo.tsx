@@ -131,10 +131,10 @@ export const RentPageInfo = ({ listing, afterCard }: RentPageViewProps) => {
             </Box>
             <Box w={400}>
               <Text size="xl" fw={600} mb={8}>Характеристики</Text>
-              <Text size="sm">
+              {/* <Text size="sm">
                 <Text span fw={600}>Категория: </Text>
                 {listing.category.name ?? <MissingField />}
-              </Text>
+              </Text> */}
             </Box>
           </Flex>
 

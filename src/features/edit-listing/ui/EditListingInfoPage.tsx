@@ -61,11 +61,20 @@ export const EditListingInfoPage = () => {
   const { mutate: saveInfo, isPending: isSaving } = useMutation({
     mutationFn: () => {
       if (!id) return Promise.reject(new Error('Missing id'));
+      const [lat, lon] = listing?.coordinates
+        ? listing.coordinates.split(',').map(Number)
+        : [undefined, undefined];
       return rentService.updateListing(id, {
         title,
         description,
         price_per_hour: Number(pricePerHour),
         attributes: characteristics.map(c => ({ key: c.label, value: c.value })),
+        category_id: listing?.category.id,
+        address: listing?.address || undefined,
+        lat: Number.isFinite(lat) ? lat : undefined,
+        lon: Number.isFinite(lon) ? lon : undefined,
+        quantity: listing?.quantity,
+        buffer_hours: listing?.bufferHours,
       });
     },
     onSuccess: () => {

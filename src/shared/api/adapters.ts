@@ -103,6 +103,7 @@ export function mapListingDetail(b: BackendListing): IRentalDetail {
     reviews: b.review_count,
     bookingCalendar: '',
     coordinates: b.lat != null && b.lon != null ? `${b.lat},${b.lon}` : undefined,
+    bufferHours: b.buffer_hours,
   };
 }
 

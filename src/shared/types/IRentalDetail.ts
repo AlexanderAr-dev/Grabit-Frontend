@@ -36,4 +36,5 @@ export interface IRentalDetail extends IRentalItem {
   coordinates?: string; // "lat,lng"
   ownerId?: string;
   attributes?: IRentalAttribute[];
+  bufferHours?: number;
 }

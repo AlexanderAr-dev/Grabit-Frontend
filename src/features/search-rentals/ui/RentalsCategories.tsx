@@ -50,12 +50,12 @@ export const RentalsCategories: FC<FilterBarProps> = ({
         onChange={v => onMaxPriceChange(v === '' ? undefined : Number(v))}
         hideControls
       />
-      <Select
+      {/* <Select
         data={sortOptions}
         placeholder="Сортировать по"
         radius="lg"
         onChange={onSortChange}
-      />
+      /> */}
     </Group>
   );
 };

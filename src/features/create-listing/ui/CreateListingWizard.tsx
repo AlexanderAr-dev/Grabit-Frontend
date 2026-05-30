@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Box, Card, Container, Flex, Loader, Progress, Text, useMantineColorScheme } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
@@ -54,6 +54,9 @@ const CreateListingWizard = () => {
   const cardStyle = componentsTheme.cardTheme[colorScheme].primary;
   const [stepIndex, setStepIndex] = useState(0);
   const [data, setData] = useState<CreateListingData>(loadDraft);
+  // Mirrors data state but updated synchronously in updateData so submitListing
+  // always sees the latest values even when called right after updateData.
+  const latestDataRef = useRef<CreateListingData>(data);
   const [visible, setVisible] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -67,10 +70,11 @@ const CreateListingWizard = () => {
   const stepTitle = STEP_TITLES[stepIndex] ?? '';
 
   const updateData = (values: Partial<CreateListingData>) => {
-    setData(prev => {
-      const next = { ...prev, ...values };
-      saveDraft(next);
-      return next;
+    const merged = { ...latestDataRef.current, ...values };
+    latestDataRef.current = merged;
+    setData(() => {
+      saveDraft(merged);
+      return merged;
     });
   };
 
@@ -83,7 +87,11 @@ const CreateListingWizard = () => {
   };
 
   const submitListing = async () => {
-    if (!data.categoryId) {
+    // Use latestDataRef so that schedule from DayScheduleStep (the last step) is
+    // always included even though the React state update is still pending.
+    const currentData = latestDataRef.current;
+
+    if (!currentData.categoryId) {
       setSubmitError('Выберите категорию объявления.');
       return;
     }
@@ -96,34 +104,34 @@ const CreateListingWizard = () => {
       let listingId = createdListingId;
       if (!listingId) {
         const listing = await rentService.createListing({
-          title: data.title ?? '',
-          description: data.description ?? '',
-          category_id: data.categoryId,
-          price_per_hour: data.pricePerHour ?? 0,
+          title: currentData.title ?? '',
+          description: currentData.description ?? '',
+          category_id: currentData.categoryId!,
+          price_per_hour: currentData.pricePerHour ?? 1,
           quantity: 1,
-          buffer_hours: 0,
-          lat: data.location?.lat,
-          lon: data.location?.lng,
-          address: data.address,
-          attributes: data.characteristics?.map(c => ({ key: c.label, value: c.value })) ?? [],
+          buffer_hours: 1,
+          lat: currentData.location?.lat,
+          lon: currentData.location?.lng,
+          address: currentData.address,
+          attributes: currentData.characteristics?.map(c => ({ key: c.label, value: c.value })) ?? [],
         });
         listingId = listing.listing_id;
         setCreatedListingId(listingId);
       }
 
       // Шаг 2: установить доступность
-      if (data.booking?.availabilityRange && data.booking.enabledDays?.length) {
+      if (currentData.booking?.availabilityRange && currentData.booking.enabledDays?.length) {
         const weekday_hours: Record<string, number[]> = {};
-        data.booking.enabledDays.forEach(day => {
-          const daySchedule = data.booking!.schedule?.find(s => s.day === day);
+        currentData.booking.enabledDays.forEach(day => {
+          const daySchedule = currentData.booking!.schedule?.find(s => s.day === day);
           weekday_hours[DAY_NUM[day]] = daySchedule
             ? daySchedule.hours.map((on, i) => (on ? i : -1)).filter(i => i >= 0)
             : [];
         });
         await rentService.setAvailability(listingId, [
           {
-            valid_from: data.booking.availabilityRange.start,
-            valid_until: data.booking.availabilityRange.end,
+            valid_from: currentData.booking.availabilityRange.start,
+            valid_until: currentData.booking.availabilityRange.end,
             weekday_hours,
           },
         ]);
@@ -132,16 +140,16 @@ const CreateListingWizard = () => {
         const savedSchedule: Record<WeekDay, boolean[]> = {} as Record<WeekDay, boolean[]>;
         const allDays: WeekDay[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
         allDays.forEach(day => {
-          const ds = data.booking!.schedule?.find(s => s.day === day);
-          savedSchedule[day] = ds ? ds.hours : Array(24).fill(false);
+          const ds = currentData.booking!.schedule?.find(s => s.day === day);
+          savedSchedule[day] = ds ? ds.hours : Array(24).fill(true);
         });
         try {
           localStorage.setItem(
             `grabit_avail_${listingId}`,
             JSON.stringify({
-              startDate: data.booking.availabilityRange.start,
-              endDate: data.booking.availabilityRange.end,
-              enabledDays: data.booking.enabledDays,
+              startDate: currentData.booking.availabilityRange.start,
+              endDate: currentData.booking.availabilityRange.end,
+              enabledDays: currentData.booking.enabledDays,
               schedule: savedSchedule,
             }),
           );
@@ -152,7 +160,7 @@ const CreateListingWizard = () => {
 
       // Шаг 3: загрузить медиа
       await Promise.allSettled(
-        (data.media ?? [])
+        (currentData.media ?? [])
           .filter(mf => mf.file)
           .map(mf => rentService.uploadMedia(listingId!, mf.file!)),
       );

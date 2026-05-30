@@ -37,7 +37,7 @@ const DAY_NUM: Record<WeekDay, string> = {
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 const emptySchedule = () =>
-  Object.fromEntries(DAYS.map(d => [d.key, Array(24).fill(false)])) as Record<WeekDay, boolean[]>;
+  Object.fromEntries(DAYS.map(d => [d.key, Array(24).fill(true)])) as Record<WeekDay, boolean[]>;
 
 const availKey = (id: string) => `grabit_avail_${id}`;
 

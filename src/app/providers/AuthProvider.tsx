@@ -1,4 +1,4 @@
-import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { AuthService, UserService } from '@shared/api';
@@ -14,16 +14,25 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [wasUnauthorized, setWasUnauthorized] = useState(false);
   const queryClient = useQueryClient();
+  // Tracks whether user was ever authenticated in this session.
+  // Prevents clearing the query cache on 401 during the initial auth check
+  // (when the user was never logged in), which would cause an infinite reload loop.
+  const hadUserRef = useRef(false);
 
   useEffect(() => {
     UserService.infoUser()
-      .then(res => setUser(res.data.data))
+      .then(res => {
+        hadUserRef.current = true;
+        setUser(res.data.data);
+      })
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
     const handleUnauthorized = () => {
+      if (!hadUserRef.current) return;
+      hadUserRef.current = false;
       setUser(null);
       setWasUnauthorized(true);
       queryClient.clear();

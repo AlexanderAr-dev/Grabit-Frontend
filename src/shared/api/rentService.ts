@@ -27,7 +27,13 @@ interface CreateListingRequest {
 interface UpdateListingData {
   title?: string;
   description?: string;
+  category_id?: number;
   price_per_hour?: number;
+  quantity?: number;
+  buffer_hours?: number;
+  lat?: number;
+  lon?: number;
+  address?: string;
   attributes?: { key: string; value: string }[];
 }
 
