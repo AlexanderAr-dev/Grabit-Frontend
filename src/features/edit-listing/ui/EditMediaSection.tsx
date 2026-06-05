@@ -4,8 +4,8 @@ import {
   Box,
   Center,
   Flex,
-  Loader,
   SimpleGrid,
+  Skeleton,
   Text,
   Title,
 } from '@mantine/core';
@@ -65,12 +65,17 @@ export const EditMediaSection = ({ listingId, media }: EditMediaSectionProps) =>
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState<LocalPreview[]>([]);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['rentAd', listingId] });
+  const isUploading = uploading.length > 0;
 
   const { mutate: deleteItem } = useMutation({
     mutationFn: (mediaId: string) => rentService.deleteMedia(listingId, mediaId),
-    onSuccess: refresh,
+    onMutate: (mediaId) => setDeletingIds(prev => new Set(prev).add(mediaId)),
+    onSettled: (_, __, mediaId) => {
+      setDeletingIds(prev => { const s = new Set(prev); s.delete(mediaId); return s; });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rentAd', listingId] }),
   });
 
   const handleFiles = async (files: FileList | null) => {
@@ -88,8 +93,10 @@ export const EditMediaSection = ({ listingId, media }: EditMediaSectionProps) =>
     await Promise.allSettled(arr.map(f => rentService.uploadMedia(listingId, f)));
 
     previews.forEach(p => URL.revokeObjectURL(p.objectUrl));
+
+    // Refetch first, then remove skeletons to avoid a flash of empty state
+    await queryClient.refetchQueries({ queryKey: ['rentAd', listingId] });
     setUploading(prev => prev.filter(p => !previews.includes(p)));
-    refresh();
 
     if (inputRef.current) inputRef.current.value = '';
   };
@@ -112,11 +119,12 @@ export const EditMediaSection = ({ listingId, media }: EditMediaSectionProps) =>
       <Button
         variant="secondary"
         onClick={() => inputRef.current?.click()}
+        disabled={isUploading}
         style={{ marginBottom: 12 }}
       >
         <Flex align="center" gap={8}>
           <IconUpload size={16} />
-          Загрузить файлы
+          {isUploading ? `Загружается ${uploading.length} файл(ов)...` : 'Загрузить файлы'}
         </Flex>
       </Button>
 
@@ -139,40 +147,38 @@ export const EditMediaSection = ({ listingId, media }: EditMediaSectionProps) =>
 
       {!isEmpty && (
         <SimpleGrid cols={3} spacing="sm">
-          {media.map(item => (
-            <Box
-              key={item.id}
-              style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '2px solid transparent' }}
-            >
-              <MediaThumb src={item.url} isVideo={isVideoItem(item)} />
-              <ActionIcon
-                size="sm"
-                color="red"
-                variant="filled"
-                style={{ position: 'absolute', top: 6, right: 6 }}
-                onClick={() => deleteItem(String(item.id))}
-              >
-                <IconTrash size={12} />
-              </ActionIcon>
-            </Box>
-          ))}
-
-          {uploading.map((p, i) => (
-            <Box
-              key={`uploading-${i}`}
-              style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '2px solid transparent' }}
-            >
-              <MediaThumb src={p.objectUrl} isVideo={p.isVideo} />
+          {media.map(item => {
+            const idStr = String(item.id);
+            const isDeleting = deletingIds.has(idStr);
+            return isDeleting ? (
+              <Skeleton key={item.id} height={120} radius="md" animate />
+            ) : (
               <Box
-                style={{
-                  position: 'absolute', inset: 0,
-                  background: 'rgba(0,0,0,0.45)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
+                key={item.id}
+                style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '2px solid transparent' }}
               >
-                <Loader size="sm" color="white" />
+                <MediaThumb src={item.url} isVideo={isVideoItem(item)} />
+                <ActionIcon
+                  size="sm"
+                  color="red"
+                  variant="filled"
+                  disabled={isUploading}
+                  style={{ position: 'absolute', top: 6, right: 6 }}
+                  onClick={() => deleteItem(idStr)}
+                >
+                  <IconTrash size={12} />
+                </ActionIcon>
               </Box>
-            </Box>
+            );
+          })}
+
+          {uploading.map((_, i) => (
+            <Skeleton
+              key={`uploading-${i}`}
+              height={120}
+              radius="md"
+              animate
+            />
           ))}
         </SimpleGrid>
       )}

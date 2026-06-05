@@ -12,3 +12,4 @@ export * from './IServerResult';
 export * from './IUserCard';
 export * from './IUserInfo';
 export * from './UserCard';
+export * from './chat';

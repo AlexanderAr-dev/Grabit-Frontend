@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   Avatar,
   Box,
   Card,
@@ -14,13 +15,13 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { IconChevronRight, IconMapPin, IconPackage, IconStar } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
+import { IconBan, IconChevronRight, IconMapPin, IconPackage, IconStar } from '@tabler/icons-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import { ReviewsSlider } from '@entities/review';
 import { UserMiniCard } from '@entities/user/ui/UserMiniCard';
-import { rentService, reviewsService, UserService } from '@shared/api';
+import { chatService, rentService, reviewsService, UserService } from '@shared/api';
 import { IRentalItem, IReview } from '@shared/types';
 import { Button } from '@shared/ui';
 
@@ -113,6 +114,18 @@ export const PublicProfile = ({ userId }: PublicProfileProps) => {
   const [allReviews, setAllReviews] = useState<IReview[]>([]);
   const [total, setTotal] = useState(0);
   const [pageSize, setPageSize] = useState(FIRST_PAGE_SIZE);
+  const queryClient = useQueryClient();
+
+  const { data: blockedUsers } = useQuery({
+    queryKey: ['blockedUsers'],
+    queryFn: () => chatService.getBlockedUsers(),
+  });
+  const isBlockedByMe = blockedUsers?.includes(userId) ?? false;
+
+  const unblockMutation = useMutation({
+    mutationFn: () => chatService.unblockUser(userId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blockedUsers'] }),
+  });
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['publicProfile', userId],
@@ -159,6 +172,27 @@ export const PublicProfile = ({ userId }: PublicProfileProps) => {
 
   return (
     <Container size="md" py="xl">
+      {isBlockedByMe && (
+        <Alert
+          icon={<IconBan size={16} />}
+          color="red"
+          variant="light"
+          mb="md"
+          title="Пользователь заблокирован"
+        >
+          <Group justify="space-between" align="center" wrap="nowrap">
+            <Text size="sm">Вы заблокировали этого пользователя. Он не может писать вам в чат.</Text>
+            <Button
+              variant="secondary"
+              onClick={() => unblockMutation.mutate()}
+              isLoading={unblockMutation.isPending}
+            >
+              Разблокировать
+            </Button>
+          </Group>
+        </Alert>
+      )}
+
       {/* Шапка профиля */}
       <Card shadow="sm" padding="lg" radius="lg" withBorder mb="xl" style={{ borderColor: '#e2e8f0' }}>
         <Flex justify="space-between" align="flex-start" gap="md">

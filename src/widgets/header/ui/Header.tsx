@@ -1,10 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Button, Flex, Group, Text } from '@mantine/core';
+import { Box, Button, Flex, Group, Indicator, Text } from '@mantine/core';
 import { IconUserCircle } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
 
 import { useAuth } from '@features/auth';
+import { chatService } from '@shared/api';
 import { navigationItems } from '@shared/config';
-import { List, NavItem, ThemeToggle } from '@shared/ui';
+import { List, NavItem, NotificationBell, ThemeToggle } from '@shared/ui';
 
 export const Header = () => {
   const location = useLocation();
@@ -12,6 +14,14 @@ export const Header = () => {
   const { isAuthenticated, login } = useAuth();
 
   const isActiveItem = (href: string) => location.pathname === href;
+
+  const { data: chatUnread = 0 } = useQuery({
+    queryKey: ['chat-unread-count'],
+    queryFn: () => chatService.getUnreadCount(),
+    refetchInterval: 10_000,
+    staleTime: 5_000,
+    enabled: isAuthenticated,
+  });
 
   return (
     <Flex align="center" px={16} py={10} style={{ width: '100%', minHeight: 56 }}>
@@ -32,11 +42,20 @@ export const Header = () => {
           gap={60}
           items={navigationItems}
           renderItem={item => (
-            <NavItem
+            <Indicator
               key={item.href}
-              {...item}
-              isActive={isActiveItem(item.href)}
-            />
+              inline
+              disabled={item.href !== '/chats' || chatUnread === 0}
+              label={chatUnread > 99 ? '99+' : chatUnread}
+              size={16}
+              color="red"
+              offset={4}
+            >
+              <NavItem
+                {...item}
+                isActive={isActiveItem(item.href)}
+              />
+            </Indicator>
           )}
         />
       </Box>
@@ -46,6 +65,7 @@ export const Header = () => {
 
       <Box style={{ flexShrink: 0, minWidth: 140 }}>
         <Group justify="flex-end" gap="sm" wrap="nowrap">
+          <NotificationBell />
           <ThemeToggle />
           <Button
             leftSection={<IconUserCircle size={22} />}

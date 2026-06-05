@@ -5,4 +5,5 @@ export * from './List';
 export * from './MissingField';
 export * from './NavItem';
 export * from './PageHeader';
+export * from './NotificationBell';
 export * from './ThemeToggle';

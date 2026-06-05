@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import {
   Box,
   Card,
@@ -11,6 +11,7 @@ import {
 import { IconMapPin, IconMessageCircle } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
+import { chatService } from '@shared/api';
 import { IRentalDetail } from '@shared/types';
 import { Button, MissingField } from '@shared/ui';
 import { UserMiniCard } from '@entities/user';
@@ -24,6 +25,17 @@ interface RentPageViewProps {
 
 export const RentPageInfo = ({ listing, afterCard }: RentPageViewProps) => {
   const navigate = useNavigate();
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const handleWriteToOwner = async () => {
+    setChatLoading(true);
+    try {
+      const conversation = await chatService.createOrGetConversation(listing.id);
+      navigate(`/chats/${conversation.conversation_id}`, { state: { conversation } });
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   const media = listing.media && listing.media.length > 0
     ? listing.media
@@ -111,7 +123,8 @@ export const RentPageInfo = ({ listing, afterCard }: RentPageViewProps) => {
             variant="primary"
             leftSection={<IconMessageCircle size={18} />}
             radius="md"
-            onClick={() => navigate(`/chats/${listing.id}`)}
+            loading={chatLoading}
+            onClick={handleWriteToOwner}
           >
             Написать
           </Button>

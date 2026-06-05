@@ -1,29 +1,20 @@
 import { FC } from 'react';
-import { ScrollArea, Stack } from '@mantine/core';
+import { Stack } from '@mantine/core';
 
-import { ChatItem, ChatMessage } from './ChatItem';
+import { ConversationResp } from '@shared/types';
+
+import { ChatItem } from './ChatItem';
 
 interface ChatListProps {
-  messages: ChatMessage[];
+  conversations: ConversationResp[];
 }
 
-export const ChatList: FC<ChatListProps> = ({ messages }) => {
+export const ChatList: FC<ChatListProps> = ({ conversations }) => {
   return (
-    <div>
-      <Stack gap="lg">
-        <ScrollArea style={{ height: '600px' }}>
-          <Stack gap="md">
-            {messages.map((message, index) => (
-              <ChatItem
-                chatId={message.id}
-                key={message.id}
-                message={message}
-                index={index}
-              />
-            ))}
-          </Stack>
-        </ScrollArea>
-      </Stack>
-    </div>
+    <Stack gap="xs">
+      {conversations.map(conv => (
+        <ChatItem key={conv.conversation_id} conversation={conv} />
+      ))}
+    </Stack>
   );
 };

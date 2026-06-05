@@ -1,7 +1,9 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { Button, Card, Group, Image, Stack, Text, useMantineColorScheme } from '@mantine/core';
+import { IconMessageCircle } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
+import { chatService } from '@shared/api';
 import { componentsTheme } from '@shared/config';
 import { BookingItem } from '@shared/api/bookingService';
 import { UserMiniCard } from '@entities/user';
@@ -36,11 +38,11 @@ interface BookingCardProps {
   onReview?: () => void;
   hasReview?: boolean;
   isLoading?: boolean;
+  highlighted?: boolean;
 }
 
 function formatDateTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString('ru-RU', {
+  return new Date(iso).toLocaleString('ru-RU', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -49,10 +51,7 @@ function formatDateTime(iso: string) {
 }
 
 function stopProp(fn?: () => void) {
-  return (e: React.MouseEvent) => {
-    e.stopPropagation();
-    fn?.();
-  };
+  return (e: React.MouseEvent) => { e.stopPropagation(); fn?.(); };
 }
 
 export const BookingCard: FC<BookingCardProps> = ({
@@ -67,18 +66,29 @@ export const BookingCard: FC<BookingCardProps> = ({
   onReview,
   hasReview,
   isLoading,
+  highlighted,
 }) => {
   const navigate = useNavigate();
   const { colorScheme } = useMantineColorScheme();
-  const themeStyles = componentsTheme.cardTheme[colorScheme];
-  const variantStyles = themeStyles['primary'];
+  const variantStyles = componentsTheme.cardTheme[colorScheme].primary;
+  const [chatLoading, setChatLoading] = useState(false);
 
   const canApprove = !!onApprove;
   const canReject = !!onReject;
   const canCancel = !!onCancel;
   const canReview = !!onReview && !hasReview;
-
   const status = booking.status;
+
+  const handleGoToChat = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setChatLoading(true);
+    try {
+      const conversation = await chatService.createOrGetConversation(booking.listing_id);
+      navigate(`/chats/${conversation.conversation_id}`, { state: { conversation } });
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   return (
     <Card
@@ -88,9 +98,11 @@ export const BookingCard: FC<BookingCardProps> = ({
       style={{
         backgroundColor: variantStyles.backgroundColor,
         color: variantStyles.text,
-        border: `1px solid ${variantStyles.borderColor}`,
+        border: highlighted ? '2px solid #FF8104' : `1px solid ${variantStyles.borderColor}`,
+        boxShadow: highlighted ? '0 0 0 3px rgba(255, 129, 4, 0.15)' : undefined,
         marginBottom: '16px',
         cursor: 'pointer',
+        transition: 'border 0.6s ease, box-shadow 0.6s ease',
       }}
       onClick={() => navigate(`/rent-page/${booking.listing_id}`)}
     >
@@ -103,6 +115,7 @@ export const BookingCard: FC<BookingCardProps> = ({
           h={160}
           fit="cover"
           style={{ minWidth: 120, flexShrink: 0 }}
+          visibleFrom="xs"
         />
 
         <Stack gap={8} style={{ flex: 1, minWidth: 0 }}>
@@ -140,43 +153,47 @@ export const BookingCard: FC<BookingCardProps> = ({
           {/* Мини профиль */}
           {userIdToShow && (
             <div onClick={e => e.stopPropagation()}>
-              <UserMiniCard
-                userId={userIdToShow}
-                ratingType={role === 'renter' ? 'owner' : 'renter'}
-              />
+              <UserMiniCard userId={userIdToShow} ratingType={role === 'renter' ? 'owner' : 'renter'} />
             </div>
           )}
 
           {/* Кнопки действий */}
-          {(canApprove || canReject || canCancel || canReview || (status === 'completed' && hasReview)) && (
-            <Group gap="xs" mt={4} onClick={e => e.stopPropagation()}>
-              {canApprove && (
-                <Button size="sm" color="green" onClick={stopProp(onApprove)} loading={isLoading}>
-                  Одобрить
-                </Button>
-              )}
-              {canReject && (
-                <Button size="sm" color="red" variant="outline" onClick={stopProp(onReject)} loading={isLoading}>
-                  Отклонить
-                </Button>
-              )}
-              {canCancel && (
-                <Button size="sm" color="red" variant="filled" onClick={stopProp(onCancel)} loading={isLoading}>
-                  Отменить
-                </Button>
-              )}
-              {canReview && (
-                <Button size="sm" variant="filled" color="orange" onClick={stopProp(onReview)}>
-                  {role === 'owner' ? 'Отзыв об арендаторе' : 'Оставить отзыв'}
-                </Button>
-              )}
-              {status === 'completed' && hasReview && (
-                <Text size="sm" c="dimmed">
-                  Отзыв оставлен
-                </Text>
-              )}
-            </Group>
-          )}
+          <Group gap="xs" mt={4} wrap="wrap" onClick={e => e.stopPropagation()}>
+            {canApprove && (
+              <Button size="sm" color="green" onClick={stopProp(onApprove)} loading={isLoading}>
+                Одобрить
+              </Button>
+            )}
+            {canReject && (
+              <Button size="sm" color="red" variant="outline" onClick={stopProp(onReject)} loading={isLoading}>
+                Отклонить
+              </Button>
+            )}
+            {canCancel && (
+              <Button size="sm" color="red" variant="filled" onClick={stopProp(onCancel)} loading={isLoading}>
+                Отменить
+              </Button>
+            )}
+            {canReview && (
+              <Button size="sm" variant="filled" color="orange" onClick={stopProp(onReview)}>
+                {role === 'owner' ? 'Отзыв об арендаторе' : 'Оставить отзыв'}
+              </Button>
+            )}
+            {status === 'completed' && hasReview && (
+              <Text size="sm" c="dimmed">Отзыв оставлен</Text>
+            )}
+            {/* Переход в чат — всегда доступен */}
+            <Button
+              size="sm"
+              variant="light"
+              color="orange"
+              leftSection={<IconMessageCircle size={15} />}
+              loading={chatLoading}
+              onClick={handleGoToChat}
+            >
+              В чат
+            </Button>
+          </Group>
         </Stack>
       </Group>
     </Card>

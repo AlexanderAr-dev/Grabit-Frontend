@@ -12,3 +12,5 @@ export * from './ui/RentPageSkeleton';
 export * from './ui/ReviewModal';
 export * from './ui/SmallCard';
 export * from './ui/SmallCardSkeleton';
+export * from './ui/HostedRentalCardSkeleton';
+export * from './ui/BookingCardSkeleton';

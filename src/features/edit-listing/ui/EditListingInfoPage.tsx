@@ -5,6 +5,7 @@ import {
   Divider,
   Flex,
   NumberInput,
+  SimpleGrid,
   Skeleton,
   Stack,
   Text,
@@ -99,10 +100,30 @@ export const EditListingInfoPage = () => {
     return (
       <EditListingLayout>
         <Stack gap="md">
-          <Skeleton height={28} width="40%" />
-          <Skeleton height={40} />
-          <Skeleton height={100} />
-          <Skeleton height={40} width="50%" />
+          <Skeleton height={28} width="40%" radius="md" />
+          <Stack gap={6}>
+            <Skeleton height={14} width={80} radius="sm" />
+            <Skeleton height={40} radius="md" />
+          </Stack>
+          <Stack gap={6}>
+            <Skeleton height={14} width={80} radius="sm" />
+            <Skeleton height={100} radius="md" />
+          </Stack>
+          <Stack gap={6}>
+            <Skeleton height={14} width={140} radius="sm" />
+            <Skeleton height={40} width={200} radius="md" />
+          </Stack>
+          <Skeleton height={1} mt={8} />
+          <Skeleton height={24} width="30%" radius="md" mt={4} />
+          <SimpleGrid cols={3} spacing="sm">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} height={120} radius="md" />
+            ))}
+          </SimpleGrid>
+          <Flex justify="space-between" mt="xl">
+            <Skeleton height={40} width={120} radius="md" />
+            <Skeleton height={40} width={180} radius="md" />
+          </Flex>
         </Stack>
       </EditListingLayout>
     );

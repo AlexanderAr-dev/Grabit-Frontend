@@ -1,18 +1,30 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Text, UnstyledButton, useMantineColorScheme } from '@mantine/core';
+import { Box, Indicator, Text, UnstyledButton, useMantineColorScheme } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
 
+import { useAuth } from '@features/auth';
+import { chatService } from '@shared/api';
 import { navigationItems } from '@shared/config';
 
 export const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { colorScheme } = useMantineColorScheme();
+  const { isAuthenticated } = useAuth();
   const isDark = colorScheme === 'dark';
 
   const bg = isDark ? '#0F172A' : '#ffffff';
   const borderColor = isDark ? '#1e293b' : '#e5e7eb';
   const activeColor = '#FF8104';
   const inactiveColor = isDark ? '#6b7280' : '#9ca3af';
+
+  const { data: chatUnread = 0 } = useQuery({
+    queryKey: ['chat-unread-count'],
+    queryFn: () => chatService.getUnreadCount(),
+    refetchInterval: 10_000,
+    staleTime: 5_000,
+    enabled: isAuthenticated,
+  });
 
   return (
     <Box
@@ -31,9 +43,10 @@ export const BottomNav = () => {
       }}
     >
       {navigationItems.map(item => {
-        const isActive = location.pathname === item.href;
+        const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
         const color = isActive ? activeColor : inactiveColor;
         const Icon = item.icon;
+        const isChat = item.href === '/chats';
 
         return (
           <UnstyledButton
@@ -49,7 +62,16 @@ export const BottomNav = () => {
               paddingBottom: 4,
             }}
           >
-            <Icon size={22} color={color} />
+            <Indicator
+              inline
+              disabled={!isChat || chatUnread === 0}
+              label={chatUnread > 99 ? '99+' : chatUnread}
+              size={16}
+              color="red"
+              offset={2}
+            >
+              <Icon size={22} color={color} />
+            </Indicator>
             <Text size="xs" fw={isActive ? 600 : 400} style={{ color, lineHeight: 1 }}>
               {item.title}
             </Text>

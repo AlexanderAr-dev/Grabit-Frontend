@@ -2,19 +2,17 @@ import { FC, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Card,
   Container,
   Flex,
   SegmentedControl,
   SimpleGrid,
-  Skeleton,
   Text,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 
 import { rentService } from '@shared/api';
 import { Button } from '@shared/ui';
-import { MediumCard } from '@entities/rental';
+import { HostedRentalCardSkeleton, MediumCard } from '@entities/rental';
 import { SearchInput } from '@features/search-rentals';
 
 const STATUS_OPTIONS = [
@@ -61,18 +59,7 @@ export const HostedRentalsPage: FC = () => {
       {isLoading && (
         <SimpleGrid cols={{ base: 1, lg: 1 }} spacing="lg">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} shadow="md" radius="lg" style={{ overflow: 'hidden' }}>
-              <Flex direction="row" gap="md">
-                <Skeleton height={230} width={230} radius="md" />
-                <Flex direction="column" gap={8} style={{ flex: 1 }}>
-                  <Skeleton height={22} width="70%" />
-                  <Skeleton height={14} width="90%" />
-                  <Skeleton height={14} width="80%" />
-                  <Skeleton height={20} width="30%" mt={8} />
-                  <Skeleton height={14} width="50%" />
-                </Flex>
-              </Flex>
-            </Card>
+            <HostedRentalCardSkeleton key={i} />
           ))}
         </SimpleGrid>
       )}
