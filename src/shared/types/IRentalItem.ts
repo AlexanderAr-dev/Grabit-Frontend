@@ -18,4 +18,6 @@ export interface IRentalItem {
   createdDate: string;
   quantity?: number;
   status?: string;
+  lat?: number;
+  lon?: number;
 }

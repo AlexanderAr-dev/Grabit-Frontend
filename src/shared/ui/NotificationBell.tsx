@@ -5,6 +5,7 @@ import { IconBell, IconBellRinging, IconCheck } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
+import { useAuth } from '@features/auth/model/AuthContext';
 import { NotificationItem, notificationsService } from '@shared/api';
 
 const UNREAD_REFETCH_INTERVAL = 10_000;
@@ -32,6 +33,7 @@ export const NotificationBell = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (!opened) return;
@@ -47,7 +49,8 @@ export const NotificationBell = () => {
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['notifications', 'unread-count'],
     queryFn: () => notificationsService.getUnreadCount(),
-    refetchInterval: UNREAD_REFETCH_INTERVAL,
+    refetchInterval: isAuthenticated ? UNREAD_REFETCH_INTERVAL : false,
+    enabled: isAuthenticated,
   });
 
   const { data: notifications, isLoading } = useQuery({

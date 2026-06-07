@@ -62,6 +62,30 @@ interface MyListingsParams {
   page_size?: number;
 }
 
+interface MediaResp {
+  media_id: string;
+  media_type: string;
+  sort_order: number;
+  url: string;
+}
+
+interface ReorderItem {
+  media_id: string;
+  sort_order: number;
+}
+
+interface UploadPhotoReq {
+  listingId: string;
+  file: File;
+  sort_order: number;
+}
+
+interface UploadVideoReq {
+  listingId: string;
+  file: File;
+  sort_order: number;
+}
+
 export class rentService {
   static async createListing(req: CreateListingRequest): Promise<BackendListing> {
     const response = await api.post<{ data: BackendListing }>('/rent/listings', req);
@@ -124,14 +148,46 @@ export class rentService {
     await api.put(`/rent/listings/${id}/availability`, { periods });
   }
 
-  static async uploadMedia(id: string, file: File): Promise<{ media_id: string; url: string }> {
+  static async uploadPhoto({ listingId, file, sort_order }: UploadPhotoReq): Promise<MediaResp> {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post<{ data: { media_id: string; url: string } }>(
-      `/rent/listings/${id}/media`,
+    formData.append('sort_order', String(sort_order));
+    const response = await api.post<{ data: MediaResp }>(
+      `/rent/listings/${listingId}/media/photo`,
       formData,
     );
     return response.data.data;
+  }
+
+  static async uploadVideo({ listingId, file, sort_order }: UploadVideoReq): Promise<MediaResp> {
+    // Шаг 1: получить presigned URL
+    const urlResp = await api.post<{ data: { upload_url: string; object_key: string } }>(
+      `/rent/listings/${listingId}/media/video/upload-url`,
+    );
+    const { upload_url, object_key } = urlResp.data.data;
+
+    // Шаг 2: загрузить файл напрямую в MinIO (без авторизации — подпись вшита в URL)
+    const putRes = await fetch(upload_url, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type || 'video/mp4' },
+    });
+    if (!putRes.ok) throw new Error(`Video upload to storage failed: ${putRes.status}`);
+
+    // Шаг 3: подтвердить загрузку
+    const confirmResp = await api.post<{ data: MediaResp }>(
+      `/rent/listings/${listingId}/media/video/confirm`,
+      { object_key, sort_order },
+    );
+    return confirmResp.data.data;
+  }
+
+  static async reorderPhotos({ listingId, items }: { listingId: string; items: ReorderItem[] }): Promise<void> {
+    await api.put(`/rent/listings/${listingId}/media/photo/reorder`, items);
+  }
+
+  static async reorderVideos({ listingId, items }: { listingId: string; items: ReorderItem[] }): Promise<void> {
+    await api.put(`/rent/listings/${listingId}/media/video/reorder`, items);
   }
 
   static async deleteMedia(listingId: string, mediaId: string): Promise<void> {

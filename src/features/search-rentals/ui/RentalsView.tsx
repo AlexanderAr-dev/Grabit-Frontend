@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react';
-import { Flex, Text } from '@mantine/core';
+import { Flex, Text, UnstyledButton } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
+import { IconList, IconMap } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { rentService } from '@shared/api';
 import { RentCardList } from '@widgets/rental-card-list';
+import { MapSearchView } from './MapSearchView';
 import { RentalsCategories } from './RentalsCategories';
 import { SearchInput } from './SearchInput';
 
+type ViewMode = 'list' | 'map';
+
 export const RentalsView = () => {
+  const [mode, setMode] = useState<ViewMode>('list');
   const [inputValue, setInputValue] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -29,6 +34,7 @@ export const RentalsView = () => {
         page: 1,
         page_size: 50,
       }),
+    enabled: mode === 'list',
   });
 
   const sortedItems = useMemo(() => {
@@ -58,15 +64,50 @@ export const RentalsView = () => {
   return (
     <>
       <Flex gap="md" justify="center" align="center" direction="column">
-        <SearchInput
-          value={inputValue}
-          onChange={event => setInputValue(event.currentTarget.value)}
-          onKeyDown={event => {
-            if (event.key === 'Enter') {
-              setSearchValue(inputValue);
-            }
-          }}
-        />
+        <Flex gap={12} align="center" style={{ width: '100%', maxWidth: 640 }}>
+          <SearchInput
+            value={inputValue}
+            onChange={event => setInputValue(event.currentTarget.value)}
+            onKeyDown={event => {
+              if (event.key === 'Enter') {
+                setSearchValue(inputValue);
+              }
+            }}
+          />
+          {/* Переключатель режима */}
+          <Flex
+            style={{
+              flexShrink: 0,
+              border: '1.5px solid #e9ecef',
+              borderRadius: 10,
+              overflow: 'hidden',
+              background: '#f8f9fa',
+            }}
+          >
+            {(['list', 'map'] as ViewMode[]).map((m, i) => (
+              <UnstyledButton
+                key={m}
+                onClick={() => setMode(m)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 14px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: mode === m ? '#fff' : '#495057',
+                  background: mode === m ? '#FF8104' : 'transparent',
+                  borderRight: i === 0 ? '1.5px solid #e9ecef' : undefined,
+                  transition: 'background 0.15s, color 0.15s',
+                  cursor: 'pointer',
+                }}
+              >
+                {m === 'list' ? <IconList size={15} /> : <IconMap size={15} />}
+                {m === 'list' ? 'Список' : 'На карте'}
+              </UnstyledButton>
+            ))}
+          </Flex>
+        </Flex>
         <RentalsCategories
           onSortChange={setSortValue}
           selectedCategoryId={categoryId}
@@ -79,12 +120,22 @@ export const RentalsView = () => {
       </Flex>
 
       <div style={{ padding: 20, minHeight: '100vh' }}>
-        {isError && (
-          <Flex justify="center" mt={40}>
-            <Text c="dimmed">Не удалось загрузить объявления. Проверьте подключение к серверу.</Text>
-          </Flex>
+        {mode === 'map' && (
+          <MapSearchView
+            filters={{ categoryId, minPrice: debouncedMin, maxPrice: debouncedMax }}
+          />
         )}
-        {!isError && <RentCardList items={sortedItems} isLoading={isLoading} />}
+
+        {mode === 'list' && (
+          <>
+            {isError && (
+              <Flex justify="center" mt={40}>
+                <Text c="dimmed">Не удалось загрузить объявления. Проверьте подключение к серверу.</Text>
+              </Flex>
+            )}
+            {!isError && <RentCardList items={sortedItems} isLoading={isLoading} />}
+          </>
+        )}
       </div>
     </>
   );

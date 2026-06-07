@@ -8,7 +8,18 @@ interface CreateBookingParams {
   end_time: string;
 }
 
-// Одиночное бронирование (create/approve/reject/cancel/extend)
+export type BookingStatus = 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'cancelled' | 'no_show';
+
+export interface BookingExtension {
+  id: string;
+  booking_id: string;
+  new_end_time: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
+// Одиночное бронирование (create/get/approve/reject/cancel)
 export interface BookingItem {
   booking_id: string;
   listing_id: string;
@@ -16,10 +27,12 @@ export interface BookingItem {
   quantity: number;
   start_time: string;
   end_time: string;
-  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'cancelled';
+  status: BookingStatus;
+  cancelled_by?: 'owner' | 'renter' | 'system';
   total_price: number;
   created_at: string;
   updated_at: string;
+  pending_extension?: BookingExtension;
 }
 
 export type BookingResult = BookingItem;
@@ -37,23 +50,19 @@ export interface BookingListingInfo {
   cover_url?: string;
 }
 
-// Элемент списка бронирований (as-renter / as-owner)
+// Элемент списка бронирований (as-renter / as-owner / listing bookings)
 export interface BookingListItem {
   booking_id: string;
   renter_id: string;
   quantity: number;
   start_time: string;
   end_time: string;
-  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'cancelled';
+  status: BookingStatus;
+  cancelled_by?: 'owner' | 'renter' | 'system';
   total_price: number;
   created_at: string;
   updated_at: string;
   listing: BookingListingInfo;
-}
-
-interface BookingsPage {
-  items: BookingItem[];
-  total: number;
 }
 
 interface BookingsListPage {
@@ -72,6 +81,11 @@ interface BookingsListParams {
 export class bookingService {
   static async createBooking(params: CreateBookingParams): Promise<BookingItem> {
     const response = await api.post<{ data: BookingItem }>('/rent/bookings', params);
+    return response.data.data;
+  }
+
+  static async getBooking(id: string): Promise<BookingItem> {
+    const response = await api.get<{ data: BookingItem }>(`/rent/bookings/${id}`);
     return response.data.data;
   }
 
@@ -103,13 +117,13 @@ export class bookingService {
     status?: string;
     page?: number;
     pageSize?: number;
-  }): Promise<BookingsPage> {
-    const response = await api.get<{ data: BackendPaginatedResponse<BookingItem> }>(
+  }): Promise<BookingsListPage> {
+    const response = await api.get<{ data: BackendPaginatedResponse<BookingListItem> }>(
       `/rent/listings/${listingId}/bookings`,
       { params: { status, page, page_size: pageSize } },
     );
     const raw = response.data.data;
-    return { items: raw.items, total: raw.total };
+    return { items: raw.items, total: raw.total, page: raw.page, page_size: raw.page_size };
   }
 
   static async approveBooking(id: string): Promise<BookingItem> {
@@ -127,8 +141,29 @@ export class bookingService {
     return response.data.data;
   }
 
-  static async extendBooking({ id, newEndTime }: { id: string; newEndTime: string }): Promise<BookingItem> {
-    const response = await api.post<{ data: BookingItem }>(`/rent/bookings/${id}/extend`, { new_end_time: newEndTime });
+  // Запрос на продление (renter, только active)
+  static async requestExtension({ id, newEndTime }: { id: string; newEndTime: string }): Promise<BookingExtension> {
+    const response = await api.post<{ data: BookingExtension }>(`/rent/bookings/${id}/extension`, {
+      new_end_time: newEndTime,
+    });
+    return response.data.data;
+  }
+
+  // Одобрить продление (owner, только active + pending extension)
+  static async approveExtension(id: string): Promise<BookingItem> {
+    const response = await api.post<{ data: BookingItem }>(`/rent/bookings/${id}/extension/approve`);
+    return response.data.data;
+  }
+
+  // Отклонить продление (owner, только active + pending extension)
+  static async rejectExtension(id: string): Promise<BookingExtension> {
+    const response = await api.post<{ data: BookingExtension }>(`/rent/bookings/${id}/extension/reject`);
+    return response.data.data;
+  }
+
+  // Отметить неявку (owner, только active, первые 60 минут)
+  static async markNoShow(id: string): Promise<BookingItem> {
+    const response = await api.post<{ data: BookingItem }>(`/rent/bookings/${id}/no-show`);
     return response.data.data;
   }
 }

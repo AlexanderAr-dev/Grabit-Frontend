@@ -90,6 +90,8 @@ export function mapListing(b: BackendListing): IRentalItem {
     createdDate: b.created_at,
     quantity: b.quantity,
     status: b.status,
+    lat: b.lat,
+    lon: b.lon,
   };
 }
 
@@ -98,7 +100,7 @@ export function mapListingDetail(b: BackendListing): IRentalDetail {
     ...mapListing(b),
     ownerId: b.owner_id,
     attributes: b.attributes,
-    media: b.media.map(m => ({ id: m.id, url: m.url, mediaType: m.media_type })),
+    media: b.media.map(m => ({ id: m.id, media_id: m.id, url: m.url, mediaType: m.media_type, sort_order: m.sort_order })),
     renter: undefined,
     reviews: b.review_count,
     bookingCalendar: '',

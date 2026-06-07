@@ -159,11 +159,19 @@ const CreateListingWizard = () => {
       }
 
       // Шаг 3: загрузить медиа
+      const allMedia = currentData.media ?? [];
+      const photos = allMedia.filter(mf => mf.file && mf.type !== 'video');
+      const videoFile = allMedia.find(mf => mf.file && mf.type === 'video');
+
       await Promise.allSettled(
-        (currentData.media ?? [])
-          .filter(mf => mf.file)
-          .map(mf => rentService.uploadMedia(listingId!, mf.file!)),
+        photos.map((mf, i) =>
+          rentService.uploadPhoto({ listingId: listingId!, file: mf.file!, sort_order: i + 1 })
+        ),
       );
+
+      if (videoFile?.file) {
+        await rentService.uploadVideo({ listingId: listingId!, file: videoFile.file, sort_order: 1 });
+      }
 
       localStorage.removeItem(DRAFT_KEY);
       navigate('/my-products');

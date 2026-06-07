@@ -1,6 +1,9 @@
 import { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { createTheme, MantineColorsTuple, MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
+
+import '@mantine/notifications/styles.css';
 
 import { AuthProvider } from './AuthProvider';
 import { QueryProvider } from './QueryProvider';
@@ -26,6 +29,7 @@ const theme = createTheme({
 export const AppProviders = ({ children }: { children: ReactNode }) => (
   <QueryProvider>
     <MantineProvider theme={theme}>
+      <Notifications position="top-right" />
       <BrowserRouter>
         <AuthProvider>{children}</AuthProvider>
       </BrowserRouter>
