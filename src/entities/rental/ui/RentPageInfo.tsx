@@ -1,5 +1,6 @@
 import { ReactNode, useState } from 'react';
 import {
+  Badge,
   Box,
   Card,
   Flex,
@@ -20,10 +21,11 @@ import { MediaGallery } from './MediaGallery';
 
 interface RentPageViewProps {
   listing: IRentalDetail;
+  isOwner?: boolean;
   afterCard?: ReactNode;
 }
 
-export const RentPageInfo = ({ listing, afterCard }: RentPageViewProps) => {
+export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps) => {
   const navigate = useNavigate();
   const [chatLoading, setChatLoading] = useState(false);
 
@@ -97,6 +99,22 @@ export const RentPageInfo = ({ listing, afterCard }: RentPageViewProps) => {
             </Box>
           </Group>
 
+          {listing.category.name && (
+            <Box mb="md">
+              <Text fw={600} size="sm" mb={4}>Категория</Text>
+              <Badge variant="light" color="orange" size="sm">
+                {listing.category.name}
+              </Badge>
+            </Box>
+          )}
+
+          {listing.quantity != null && listing.quantity > 1 && (
+            <Box mb="md">
+              <Text fw={600} size="sm" mb={4}>Количество</Text>
+              <Text size="sm">{listing.quantity} шт.</Text>
+            </Box>
+          )}
+
           <Box mb="lg">
             <Group gap={6} mb={4}>
               <IconMapPin size={16} style={{ color: 'gray' }} />
@@ -118,16 +136,18 @@ export const RentPageInfo = ({ listing, afterCard }: RentPageViewProps) => {
             )}
           </Box>
 
-          <Button
-            fullWidth
-            variant="primary"
-            leftSection={<IconMessageCircle size={18} />}
-            radius="md"
-            loading={chatLoading}
-            onClick={handleWriteToOwner}
-          >
-            Написать
-          </Button>
+          {!isOwner && (
+            <Button
+              fullWidth
+              variant="primary"
+              leftSection={<IconMessageCircle size={18} />}
+              radius="md"
+              loading={chatLoading}
+              onClick={handleWriteToOwner}
+            >
+              Написать
+            </Button>
+          )}
         </Card>
       </Flex>
 
@@ -144,10 +164,6 @@ export const RentPageInfo = ({ listing, afterCard }: RentPageViewProps) => {
             </Box>
             <Box w={400}>
               <Text size="xl" fw={600} mb={8}>Характеристики</Text>
-              {/* <Text size="sm">
-                <Text span fw={600}>Категория: </Text>
-                {listing.category.name ?? <MissingField />}
-              </Text> */}
             </Box>
           </Flex>
 
@@ -169,13 +185,15 @@ export const RentPageInfo = ({ listing, afterCard }: RentPageViewProps) => {
             </Box>
           )}
 
-          <Box mb={30}>
-            <BookingWidget
-              listingId={listing.id}
-              pricePerHour={listing.cost.payment}
-              maxQuantity={listing.quantity ?? 1}
-            />
-          </Box>
+          {!isOwner && (
+            <Box mb={30}>
+              <BookingWidget
+                listingId={listing.id}
+                pricePerHour={listing.cost.payment}
+                maxQuantity={listing.quantity ?? 1}
+              />
+            </Box>
+          )}
         </Box>
       </Flex>
     </>

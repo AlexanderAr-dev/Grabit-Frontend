@@ -12,7 +12,7 @@ export interface BackendListing {
   owner_id: string;
   title: string;
   description: string;
-  category_id: number;
+  category: BackendCategory;
   price_per_hour: number;
   quantity: number;
   buffer_hours: number;
@@ -81,7 +81,7 @@ export function mapListing(b: BackendListing): IRentalItem {
     title: b.title,
     description: b.description,
     cost: { payment: b.price_per_hour, priceUnit: 'час' },
-    category: { id: b.category_id, name: null },
+    category: { id: b.category?.id ?? 0, name: b.category?.name ?? null },
     productType: null,
     address: b.address ?? '',
     rating: b.avg_rating,
@@ -160,7 +160,7 @@ export function mapListingToCard(b: BackendListing): CardPreview {
     reviewCount: b.review_count,
     shortDescription: b.description,
     createdAt: new Date(b.created_at).toLocaleDateString('ru-RU'),
-    category: { id: b.category_id, name: null },
+    category: { id: b.category?.id ?? 0, name: b.category?.name ?? null },
     previewImage: b.media[0]?.url,
     status: b.status,
   };

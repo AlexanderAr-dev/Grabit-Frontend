@@ -27,7 +27,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { IconGripVertical, IconPhoto, IconStar, IconTrash, IconUpload, IconVideo } from '@tabler/icons-react';
+import { IconPhoto, IconStar, IconTrash, IconUpload, IconVideo } from '@tabler/icons-react';
 
 import { Button } from '@shared/ui';
 import { MediaFile } from '../model/types/CreateListing';
@@ -51,22 +51,25 @@ const SortablePhoto = ({ file, index, isPreview, onRemove, onClick }: SortablePh
   return (
     <Box
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       style={{
         position: 'relative',
         borderRadius: 8,
         overflow: 'hidden',
         border: isPreview ? '2px solid #FF8104' : '2px solid transparent',
-        cursor: 'pointer',
+        cursor: isDragging ? 'grabbing' : 'grab',
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
+        touchAction: 'none',
       }}
       onClick={onClick}
     >
-      <Image src={file.url} alt={file.name} h={120} fit="cover" />
+      <Image src={file.url} alt={file.name} h={120} fit="cover" style={{ pointerEvents: 'none' }} />
 
       {isPreview && (
-        <Badge size="xs" color="orange" style={{ position: 'absolute', top: 6, left: 6 }} leftSection={<IconStar size={10} />}>
+        <Badge size="xs" color="orange" style={{ position: 'absolute', top: 6, left: 6, pointerEvents: 'none' }} leftSection={<IconStar size={10} />}>
           Превью
         </Badge>
       )}
@@ -76,21 +79,13 @@ const SortablePhoto = ({ file, index, isPreview, onRemove, onClick }: SortablePh
         color="red"
         variant="filled"
         style={{ position: 'absolute', top: 6, right: 6 }}
+        onPointerDown={e => e.stopPropagation()}
         onClick={e => { e.stopPropagation(); onRemove(); }}
       >
         <IconTrash size={12} />
       </ActionIcon>
 
-      <Box
-        {...attributes}
-        {...listeners}
-        style={{ position: 'absolute', bottom: 6, right: 6, cursor: 'grab', color: '#adb5bd' }}
-        onClick={e => e.stopPropagation()}
-      >
-        <IconGripVertical size={14} />
-      </Box>
-
-      <Badge size="xs" color="gray" style={{ position: 'absolute', bottom: 6, left: 6 }}>
+      <Badge size="xs" color="gray" style={{ position: 'absolute', bottom: 6, left: 6, pointerEvents: 'none' }}>
         {index + 1}
       </Badge>
     </Box>

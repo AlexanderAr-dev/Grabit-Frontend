@@ -87,6 +87,7 @@ export const RentPage = () => {
     <>
       <RentPageInfo
         listing={listing}
+        isOwner={isOwner}
         afterCard={isOwner ? (
           <>
             <Flex justify="center" mt={20} mb={4}>

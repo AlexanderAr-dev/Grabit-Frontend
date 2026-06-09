@@ -25,7 +25,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { IconGripVertical, IconPhoto, IconTrash, IconUpload, IconVideo } from '@tabler/icons-react';
+import { IconPhoto, IconTrash, IconUpload, IconVideo } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { rentService } from '@shared/api';
@@ -89,43 +89,42 @@ interface SortableMediaItemProps {
 
 const SortableMediaItem = ({ item, isDeleting, isUploading, onDelete }: SortableMediaItemProps) => {
   const idStr = String(item.id);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: idStr });
+  const isVideo = isVideoItem(item);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: idStr,
+    disabled: isVideo,
+  });
 
   if (isDeleting) return <Skeleton height={120} radius="md" animate />;
 
   return (
     <Box
       ref={setNodeRef}
+      {...(isVideo ? {} : { ...attributes, ...listeners })}
       style={{
         position: 'relative',
         borderRadius: 8,
         overflow: 'hidden',
         border: '2px solid transparent',
+        cursor: isVideo ? 'default' : isDragging ? 'grabbing' : 'grab',
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
+        touchAction: 'none',
       }}
     >
-      <MediaThumb src={item.url} isVideo={isVideoItem(item)} />
+      <MediaThumb src={item.url} isVideo={isVideo} />
       <ActionIcon
         size="sm"
         color="red"
         variant="filled"
         disabled={isUploading}
         style={{ position: 'absolute', top: 6, right: 6 }}
+        onPointerDown={e => e.stopPropagation()}
         onClick={onDelete}
       >
         <IconTrash size={12} />
       </ActionIcon>
-      {!isVideoItem(item) && (
-        <Box
-          {...attributes}
-          {...listeners}
-          style={{ position: 'absolute', bottom: 6, right: 6, cursor: 'grab', color: '#adb5bd' }}
-        >
-          <IconGripVertical size={14} />
-        </Box>
-      )}
     </Box>
   );
 };
@@ -222,12 +221,10 @@ export const EditMediaSection = ({ listingId, media }: EditMediaSectionProps) =>
     try {
       await rentService.reorderPhotos({ listingId, items });
       await queryClient.refetchQueries({ queryKey: ['rentAd', listingId] });
+      setOptimisticPhotos(null);
     } catch {
-      // Откатываем оптимистичное изменение при ошибке
       setOptimisticPhotos(null);
       notifications.show({ color: 'red', title: 'Ошибка', message: 'Не удалось изменить порядок фотографий' });
-    } finally {
-      setOptimisticPhotos(null);
     }
   };
 

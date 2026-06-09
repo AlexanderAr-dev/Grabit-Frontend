@@ -89,6 +89,9 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
   const [pricePerHour, setPricePerHour] = useState<number | string>(
     data.pricePerHour ?? '',
   );
+  const [quantity, setQuantity] = useState<number | string>(
+    data.quantity ?? 1,
+  );
 
   const { data: rawCategories, isLoading: catLoading } = useQuery({
     queryKey: ['categories'],
@@ -147,6 +150,7 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
       title: title.trim(),
       description: description.trim(),
       pricePerHour: Number(pricePerHour) || undefined,
+      quantity: Number(quantity) || 1,
       characteristics,
       categoryId: selectedCategoryId,
       ...(isSpace && {
@@ -191,6 +195,16 @@ const DetailsStep = ({ data, updateData, next, prev }: StepProps) => {
         min={0}
         value={pricePerHour}
         onChange={setPricePerHour}
+        w={200}
+      />
+
+      <NumberInput
+        label="Количество единиц"
+        description="Сколько экземпляров доступно для аренды одновременно"
+        placeholder="1"
+        min={1}
+        value={quantity}
+        onChange={setQuantity}
         w={200}
       />
 

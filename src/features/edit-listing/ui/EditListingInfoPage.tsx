@@ -37,6 +37,7 @@ export const EditListingInfoPage = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [pricePerHour, setPricePerHour] = useState<number | string>('');
+  const [quantity, setQuantity] = useState<number | string>(1);
   const [characteristics, setCharacteristics] = useState<Characteristic[]>([]);
   const [charLabel, setCharLabel] = useState('');
   const [charValue, setCharValue] = useState('');
@@ -52,6 +53,7 @@ export const EditListingInfoPage = () => {
       setTitle(listing.title ?? '');
       setDescription(listing.description ?? '');
       setPricePerHour(listing.cost.payment ?? '');
+      setQuantity(listing.quantity ?? 1);
       setCharacteristics(
         (listing.attributes ?? []).map(a => ({ label: a.key, value: a.value })),
       );
@@ -69,12 +71,12 @@ export const EditListingInfoPage = () => {
         title,
         description,
         price_per_hour: Number(pricePerHour),
+        quantity: Number(quantity) || 1,
         attributes: characteristics.map(c => ({ key: c.label, value: c.value })),
         category_id: listing?.category.id,
         address: listing?.address || undefined,
         lat: Number.isFinite(lat) ? lat : undefined,
         lon: Number.isFinite(lon) ? lon : undefined,
-        quantity: listing?.quantity,
         buffer_hours: listing?.bufferHours,
       });
     },
@@ -153,6 +155,15 @@ export const EditListingInfoPage = () => {
           min={0}
           value={pricePerHour}
           onChange={setPricePerHour}
+          w={200}
+        />
+
+        <NumberInput
+          label="Количество единиц"
+          description="Сколько экземпляров доступно для аренды одновременно"
+          min={1}
+          value={quantity}
+          onChange={setQuantity}
           w={200}
         />
 

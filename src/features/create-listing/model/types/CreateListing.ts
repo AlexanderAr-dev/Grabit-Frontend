@@ -51,6 +51,7 @@ export interface CreateListingData {
   title?: string;
   description?: string;
   pricePerHour?: number;
+  quantity?: number;
   characteristics?: Characteristic[];
   spaceDetails?: SpaceDetails;
   media?: MediaFile[];

@@ -198,10 +198,15 @@ export const BookingCard: FC<BookingCardProps> = ({
               {formatDateTime(booking.start_time)} — {formatDateTime(booking.end_time)}
             </Text>
 
-            {/* Цена */}
-            <Text size="md" fw={600} c={variantStyles.text}>
-              {booking.total_price} ₽
-            </Text>
+            {/* Цена + количество */}
+            <Group gap="md">
+              <Text size="md" fw={600} c={variantStyles.text}>
+                {booking.total_price} ₽
+              </Text>
+              {booking.quantity > 1 && (
+                <Text size="sm" c="dimmed">× {booking.quantity} шт.</Text>
+              )}
+            </Group>
 
             {/* Кем отменено */}
             {status === 'cancelled' && booking.cancelled_by && (

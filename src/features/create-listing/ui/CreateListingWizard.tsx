@@ -108,7 +108,7 @@ const CreateListingWizard = () => {
           description: currentData.description ?? '',
           category_id: currentData.categoryId!,
           price_per_hour: currentData.pricePerHour ?? 1,
-          quantity: 1,
+          quantity: currentData.quantity ?? 1,
           buffer_hours: 1,
           lat: currentData.location?.lat,
           lon: currentData.location?.lng,

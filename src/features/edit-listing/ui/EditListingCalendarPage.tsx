@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+  Alert,
   Checkbox,
   Flex,
   Stack,
@@ -10,8 +11,8 @@ import {
   Box,
   Tabs,
 } from '@mantine/core';
+import { IconChevronLeft, IconChevronRight, IconInfoCircle } from '@tabler/icons-react';
 import { Calendar } from '@mantine/dates';
-import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -74,6 +75,7 @@ export const EditListingCalendarPage = () => {
   const accent = '#FF8104';
 
   const saved = id ? loadSavedAvailability(id) : {};
+  const hasSavedDates = !!(saved.startDate && saved.endDate);
 
   const [startDate, setStartDate] = useState<string | null>(saved.startDate ?? null);
   const [endDate, setEndDate] = useState<string | null>(saved.endDate ?? null);
@@ -102,7 +104,7 @@ export const EditListingCalendarPage = () => {
       ]);
     },
     onSuccess: () => {
-      if (id) {
+      if (id && startDate && endDate) {
         persistAvailability(id, { startDate, endDate, enabledDays, schedule });
       }
       queryClient.invalidateQueries({ queryKey: ['rentAd', id] });
@@ -227,6 +229,13 @@ export const EditListingCalendarPage = () => {
   return (
     <EditListingLayout>
       <Stack gap="xl">
+        {!hasSavedDates && (
+          <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
+            Если период доступности ранее был задан — он сохранён на сервере.
+            Нажмите «Сохранить» без выбора дат, чтобы не менять расписание.
+          </Alert>
+        )}
+
         <Stack gap="md">
           <Title order={3}>Период доступности</Title>
 
