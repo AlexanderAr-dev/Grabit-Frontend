@@ -23,7 +23,7 @@ import { ReviewsSlider } from '@entities/review';
 import { UserMiniCard } from '@entities/user/ui/UserMiniCard';
 import { chatService, rentService, reviewsService, UserService } from '@shared/api';
 import { IRentalItem, IReview } from '@shared/types';
-import { Button } from '@shared/ui';
+import { Button, ProBadge } from '@shared/ui';
 
 const FIRST_PAGE_SIZE = 20;
 const MORE_PAGE_SIZE = 5;
@@ -197,7 +197,10 @@ export const PublicProfile = ({ userId }: PublicProfileProps) => {
       <Card shadow="sm" padding="lg" radius="lg" withBorder mb="xl" style={{ borderColor: '#e2e8f0' }}>
         <Flex justify="space-between" align="flex-start" gap="md">
           <Box style={{ flex: 1 }}>
-            <Title order={2} mb={4}>{profile.name || profile.username}</Title>
+            <Group gap={8} align="center" wrap="nowrap" mb={4}>
+              <Title order={2} style={{ margin: 0 }}>{profile.name || profile.username}</Title>
+              {profile.isPremium && <ProBadge size="md" />}
+            </Group>
             <Text c="dimmed" size="sm" mb="md">@{profile.username}</Text>
             <Text size="xs" c="dimmed">
               На сервисе с{' '}

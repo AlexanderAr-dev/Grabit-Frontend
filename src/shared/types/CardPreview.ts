@@ -13,6 +13,7 @@ export interface CardPreview {
   category?: ICategory;
   previewImage?: string;
   status?: string;
+  ownerIsPremium?: boolean;
 }
 
 export interface CardDetails extends CardPreview {}

@@ -12,6 +12,7 @@ import {
   RentedRentalsPage,
   RentPage,
   ReviewsPage,
+  SubscriptionPage,
   TestHome,
   UserChatsPage,
   UserRentPage,
@@ -27,6 +28,11 @@ export const routes: IRouterType[] = [
   {
     path: '/profile',
     component: <ProfilePage />,
+    private: true,
+  },
+  {
+    path: '/subscription',
+    component: <SubscriptionPage />,
     private: true,
   },
   {

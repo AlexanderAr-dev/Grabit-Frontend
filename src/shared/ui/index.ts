@@ -7,3 +7,4 @@ export * from './NavItem';
 export * from './PageHeader';
 export * from './NotificationBell';
 export * from './ThemeToggle';
+export * from './ProBadge';

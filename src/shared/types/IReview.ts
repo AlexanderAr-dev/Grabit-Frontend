@@ -8,4 +8,5 @@ export interface IReview {
   createdDate: string;
   text: string;
   rating: number;
+  authorIsPremium?: boolean;
 }

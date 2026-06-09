@@ -33,6 +33,7 @@ export interface BookingItem {
   created_at: string;
   updated_at: string;
   pending_extension?: BookingExtension;
+  renter_is_premium?: boolean;
 }
 
 export type BookingResult = BookingItem;
@@ -48,6 +49,7 @@ export interface BookingListingInfo {
   avg_rating: number;
   review_count: number;
   cover_url?: string;
+  owner_is_premium?: boolean;
 }
 
 // Элемент списка бронирований (as-renter / as-owner / listing bookings)
@@ -63,6 +65,7 @@ export interface BookingListItem {
   created_at: string;
   updated_at: string;
   listing: BookingListingInfo;
+  renter_is_premium?: boolean;
 }
 
 interface BookingsListPage {

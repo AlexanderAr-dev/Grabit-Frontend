@@ -24,4 +24,7 @@ export interface IUserInfo {
   gender?: string;
   profileComplete?: boolean;
   language?: string | null;
+  isPremium: boolean;
+  subscriptionTier: 'free' | 'premium';
+  subscriptionExpiresAt?: string;
 }

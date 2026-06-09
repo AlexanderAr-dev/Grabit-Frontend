@@ -14,3 +14,4 @@ export * from './ReviewsPage.tsx';
 export * from './TestHome.tsx';
 export * from './UserChatsPage.tsx';
 export * from './UserRentPage.tsx';
+export * from './SubscriptionPage.tsx';

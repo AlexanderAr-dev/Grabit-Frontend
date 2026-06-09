@@ -18,6 +18,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import {
   IconCamera,
+  IconCrown,
   IconEdit,
   IconLogout,
   IconPackage,
@@ -29,9 +30,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+
 import { useAuth } from '@features/auth';
 import { UserService } from '@shared/api';
-import { Button } from '@shared/ui';
+import { Button, ProBadge } from '@shared/ui';
 import { useGetProfileInfo } from '../model/useGetProfileInfo';
 
 const GENDER_OPTIONS = [
@@ -144,8 +146,16 @@ export const Profile = () => {
       <Container size="sm" py="xl">
         <Group justify="space-between" mb="lg" wrap="nowrap" align="flex-start">
           <div style={{ flex: 1 }}>
-            <Title order={1}>{user.firstName} {user.lastName}</Title>
+            <Group gap={8} align="center" wrap="nowrap">
+              <Title order={1}>{user.firstName} {user.lastName}</Title>
+              {user.isPremium && <ProBadge size="md" />}
+            </Group>
             <Text c="dimmed" size="md" mt={4}>@{user.login}</Text>
+            {user.isPremium && user.subscriptionExpiresAt && (
+              <Text size="xs" c="dimmed" mt={2}>
+                PRO до {formatDate(user.subscriptionExpiresAt)}
+              </Text>
+            )}
           </div>
 
           <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -320,6 +330,23 @@ export const Profile = () => {
             Выйти
           </Button>
         </Group>
+
+        {!user.isPremium && (
+          <Button
+            fullWidth
+            leftSection={<IconCrown size={16} />}
+            onClick={() => navigate('/subscription')}
+            style={{
+              marginTop: 12,
+              background: 'linear-gradient(135deg, #FF8104 0%, #FF5C00 100%)',
+              color: '#fff',
+              border: 'none',
+              fontWeight: 700,
+            }}
+          >
+            Получить PRO
+          </Button>
+        )}
       </Container>
 
       <Modal opened={opened} onClose={close} title="Редактировать профиль" size="md">

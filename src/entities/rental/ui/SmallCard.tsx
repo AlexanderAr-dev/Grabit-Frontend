@@ -11,6 +11,7 @@ import {
 
 import { componentsTheme } from '@shared/config';
 import { IRentalItem } from '@shared/types';
+import { ProBadge } from '@shared/ui';
 
 interface SmallCardProps extends IRentalItem {
   variant?: 'primary';
@@ -25,6 +26,7 @@ export const SmallCard: FC<SmallCardProps> = ({
   cost,
   address,
   createdDate,
+  ownerIsPremium,
 }) => {
   const { colorScheme } = useMantineColorScheme();
   const themeStyles = componentsTheme.cardTheme[colorScheme];
@@ -47,13 +49,18 @@ export const SmallCard: FC<SmallCardProps> = ({
       }}
       onClick={() => navigate(`/rent-page/${id}`)}
     >
-      <Card.Section>
+      <Card.Section style={{ position: 'relative' }}>
         <Image
           src={previewImage?.url || '/placeholder.jpg'}
           fallbackSrc="/placeholder.jpg"
           height={200}
           alt={title}
         />
+        {ownerIsPremium && (
+          <div style={{ position: 'absolute', top: 8, right: 8 }}>
+            <ProBadge size="sm" />
+          </div>
+        )}
       </Card.Section>
 
       <div style={{ padding: '14px 16px' }}>

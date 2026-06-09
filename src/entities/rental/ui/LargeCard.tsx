@@ -11,6 +11,7 @@ import {
 
 import { componentsTheme } from '@shared/config';
 import { CardDetails } from '@shared/types';
+import { ProBadge } from '@shared/ui';
 
 interface CardProps extends CardDetails {
   variant?: 'primary';
@@ -27,6 +28,7 @@ export const LargeCard: FC<CardProps> = ({
   previewImage,
   shortDescription,
   createdAt,
+  ownerIsPremium,
 }) => {
   const { colorScheme } = useMantineColorScheme();
   const themeStyles = componentsTheme.cardTheme[colorScheme];
@@ -61,14 +63,12 @@ export const LargeCard: FC<CardProps> = ({
             mb={8}
             wrap="nowrap"
           >
-            <Text
-              size="lg"
-              fw={600}
-              lineClamp={2}
-              style={{ flex: 1, minWidth: 0, marginRight: 8 }}
-            >
-              {title}
-            </Text>
+            <Group gap={6} align="center" wrap="nowrap" style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+              <Text size="lg" fw={600} lineClamp={2} style={{ flex: 1, minWidth: 0 }}>
+                {title}
+              </Text>
+              {ownerIsPremium && <ProBadge size="sm" />}
+            </Group>
             <Group gap={4} wrap="nowrap">
               <Rating value={rating} readOnly size="sm" />
               {reviewCount && (

@@ -20,4 +20,5 @@ export interface IRentalItem {
   status?: string;
   lat?: number;
   lon?: number;
+  ownerIsPremium?: boolean;
 }

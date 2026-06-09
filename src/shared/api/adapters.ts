@@ -26,6 +26,7 @@ export interface BackendListing {
   attributes: { key: string; value: string }[];
   created_at: string;
   updated_at: string;
+  owner_is_premium?: boolean;
 }
 
 export interface BackendUserResponse {
@@ -46,6 +47,9 @@ export interface BackendUserResponse {
   avg_rating_as_renter: number;
   review_count_as_renter: number;
   created_at: string;
+  is_premium?: boolean;
+  subscription_tier?: 'free' | 'premium';
+  subscription_expires_at?: string;
 }
 
 export interface BackendReview {
@@ -58,6 +62,7 @@ export interface BackendReview {
   rating: number;
   comment: string;
   created_at: string;
+  author_is_premium?: boolean;
 }
 
 export interface BackendCategory {
@@ -92,6 +97,7 @@ export function mapListing(b: BackendListing): IRentalItem {
     status: b.status,
     lat: b.lat,
     lon: b.lon,
+    ownerIsPremium: b.owner_is_premium ?? false,
   };
 }
 
@@ -134,6 +140,9 @@ export function mapUser(b: BackendUserResponse): IUserInfo {
     profileComplete: b.profile_complete,
     language: b.language ?? null,
     isVerified: null,
+    isPremium: b.is_premium ?? false,
+    subscriptionTier: b.subscription_tier ?? 'free',
+    subscriptionExpiresAt: b.subscription_expires_at,
   };
 }
 
@@ -146,6 +155,7 @@ export function mapReview(b: BackendReview): IReview {
     createdDate: b.created_at,
     text: b.comment,
     rating: b.rating,
+    authorIsPremium: b.author_is_premium ?? false,
   };
 }
 
@@ -163,5 +173,6 @@ export function mapListingToCard(b: BackendListing): CardPreview {
     category: { id: b.category?.id ?? 0, name: b.category?.name ?? null },
     previewImage: b.media[0]?.url,
     status: b.status,
+    ownerIsPremium: b.owner_is_premium ?? false,
   };
 }

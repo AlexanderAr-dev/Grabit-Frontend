@@ -13,6 +13,7 @@ import {
 
 import { componentsTheme } from '@shared/config';
 import { CardPreview } from '@shared/types';
+import { ProBadge } from '@shared/ui';
 
 interface CardProps extends CardPreview {
   variant?: 'primary';
@@ -38,6 +39,7 @@ export const MediumCard: FC<CardProps> = ({
   createdAt,
   status,
   actions,
+  ownerIsPremium,
 }) => {
   const { colorScheme } = useMantineColorScheme();
   const themeStyles = componentsTheme.cardTheme[colorScheme];
@@ -71,14 +73,12 @@ export const MediumCard: FC<CardProps> = ({
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <Group justify="space-between" align="flex-start" mb={8} wrap="nowrap">
-            <Text
-              size="lg"
-              fw={600}
-              lineClamp={2}
-              style={{ flex: 1, minWidth: 0, marginRight: 8 }}
-            >
-              {title}
-            </Text>
+            <Group gap={6} align="center" wrap="nowrap" style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+              <Text size="lg" fw={600} lineClamp={2} style={{ flex: 1, minWidth: 0 }}>
+                {title}
+              </Text>
+              {ownerIsPremium && <ProBadge size="sm" />}
+            </Group>
 
             <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
               <Text size="sm" c={dim} style={{ whiteSpace: 'nowrap' }}>

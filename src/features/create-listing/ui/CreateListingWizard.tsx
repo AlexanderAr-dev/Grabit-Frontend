@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Box, Card, Container, Flex, Loader, Progress, Text, useMantineColorScheme } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { Alert, Anchor, Box, Card, Container, Flex, Loader, Progress, Text, useMantineColorScheme } from '@mantine/core';
+import { IconAlertCircle, IconCrown } from '@tabler/icons-react';
+import axios from 'axios';
 
 import { rentService } from '@shared/api';
 import { componentsTheme } from '@shared/config';
@@ -60,6 +61,7 @@ const CreateListingWizard = () => {
   const [visible, setVisible] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isLimitError, setIsLimitError] = useState(false);
   const [createdListingId, setCreatedListingId] = useState<string | null>(null);
 
   const typeSteps: StepComponent[] = wizardSteps[data.type] ?? [];
@@ -177,7 +179,13 @@ const CreateListingWizard = () => {
       navigate('/my-products');
     } catch (err) {
       console.error('[CreateListing] submit error:', err);
-      setSubmitError('Не удалось создать объявление. Проверьте данные и попробуйте ещё раз.');
+      if (axios.isAxiosError(err) && err.response?.status === 403) {
+        setIsLimitError(true);
+        setSubmitError('Достигнут лимит объявлений для бесплатного аккаунта (3 шт.).');
+      } else {
+        setIsLimitError(false);
+        setSubmitError('Не удалось создать объявление. Проверьте данные и попробуйте ещё раз.');
+      }
       setIsSubmitting(false);
     }
   };
@@ -230,14 +238,23 @@ const CreateListingWizard = () => {
           <>
             {submitError && (
               <Alert
-                icon={<IconAlertCircle size={16} />}
-                color="red"
+                icon={isLimitError ? <IconCrown size={16} /> : <IconAlertCircle size={16} />}
+                color={isLimitError ? 'orange' : 'red'}
                 radius="md"
                 mb="md"
-                onClose={() => setSubmitError(null)}
+                onClose={() => { setSubmitError(null); setIsLimitError(false); }}
                 withCloseButton
               >
                 {submitError}
+                {isLimitError && (
+                  <Text size="sm" mt={4}>
+                    Оформите{' '}
+                    <Anchor href="/subscription" fw={600} c="#FF8104">
+                      PRO-подписку
+                    </Anchor>
+                    {' '}для неограниченного количества объявлений.
+                  </Text>
+                )}
               </Alert>
             )}
 

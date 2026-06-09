@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import { UserService } from '@shared/api/userService';
+import { ProBadge } from '@shared/ui';
 
 interface UserMiniCardProps {
   userId: string;
@@ -54,9 +55,12 @@ export const UserMiniCard: FC<UserMiniCardProps> = ({ userId, ratingType = 'owne
         style={{ flexShrink: 0 }}
       />
       <Stack gap={2}>
-        <Text size="sm" fw={600} style={{ lineHeight: 1.2 }}>
-          {displayName}
-        </Text>
+        <Group gap={4} align="center" wrap="nowrap">
+          <Text size="sm" fw={600} style={{ lineHeight: 1.2 }}>
+            {displayName}
+          </Text>
+          {profile.isPremium && <ProBadge size="sm" />}
+        </Group>
         <Text size="xs" c="dimmed" style={{ lineHeight: 1.2 }}>
           @{profile.username}
         </Text>

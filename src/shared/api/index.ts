@@ -8,3 +8,4 @@ export * from './rentService';
 export * from './reviewsService';
 export * from './testService';
 export * from './userService';
+export * from './subscriptionService';

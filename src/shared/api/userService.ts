@@ -17,6 +17,7 @@ export interface IPublicProfile {
   reviewCountAsRenter: number;
   activeListingsCount: number;
   createdAt: string;
+  isPremium: boolean;
 }
 
 interface BackendPublicProfile {
@@ -31,6 +32,7 @@ interface BackendPublicProfile {
   review_count_as_renter: number;
   active_listings_count: number;
   created_at: string;
+  is_premium?: boolean;
 }
 
 export interface UpdateProfileData {
@@ -85,6 +87,7 @@ export class UserService {
       reviewCountAsRenter: u.review_count_as_renter,
       activeListingsCount: u.active_listings_count,
       createdAt: u.created_at,
+      isPremium: u.is_premium ?? false,
     };
   }
 
