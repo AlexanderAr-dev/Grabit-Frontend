@@ -1,7 +1,9 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Indicator, Text, UnstyledButton, useMantineColorScheme } from '@mantine/core';
+import { IconShieldFilled } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 
+import { useIsAdmin } from '@features/admin';
 import { useAuth } from '@features/auth';
 import { chatService } from '@shared/api';
 import { navigationItems } from '@shared/config';
@@ -11,6 +13,7 @@ export const BottomNav = () => {
   const navigate = useNavigate();
   const { colorScheme } = useMantineColorScheme();
   const { isAuthenticated } = useAuth();
+  const isAdmin = useIsAdmin();
   const isDark = colorScheme === 'dark';
 
   const bg = isDark ? '#0F172A' : '#ffffff';
@@ -78,6 +81,36 @@ export const BottomNav = () => {
           </UnstyledButton>
         );
       })}
+
+      {isAdmin && (
+        <UnstyledButton
+          onClick={() => navigate('/admin')}
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            paddingBottom: 4,
+          }}
+        >
+          <IconShieldFilled
+            size={22}
+            color={location.pathname.startsWith('/admin') ? activeColor : inactiveColor}
+          />
+          <Text
+            size="xs"
+            fw={location.pathname.startsWith('/admin') ? 600 : 400}
+            style={{
+              color: location.pathname.startsWith('/admin') ? activeColor : inactiveColor,
+              lineHeight: 1,
+            }}
+          >
+            Админ
+          </Text>
+        </UnstyledButton>
+      )}
     </Box>
   );
 };

@@ -1,8 +1,9 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Button, Flex, Group, Indicator, Text } from '@mantine/core';
-import { IconUserCircle } from '@tabler/icons-react';
+import { IconShieldFilled, IconUserCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 
+import { useIsAdmin } from '@features/admin';
 import { useAuth } from '@features/auth';
 import { chatService } from '@shared/api';
 import { navigationItems } from '@shared/config';
@@ -13,6 +14,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const { isAuthenticated, login } = useAuth();
 
+  const isAdmin = useIsAdmin();
   const isActiveItem = (href: string) => location.pathname === href;
 
   const { data: chatUnread = 0 } = useQuery({
@@ -36,28 +38,38 @@ export const Header = () => {
 
       {/* Навигация — только на десктопе */}
       <Box visibleFrom="sm" style={{ flex: 1, display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
-        <List
-          align="center"
-          direction="horizontal"
-          gap={60}
-          items={navigationItems}
-          renderItem={item => (
-            <Indicator
-              key={item.href}
-              inline
-              disabled={item.href !== '/chats' || chatUnread === 0}
-              label={chatUnread > 99 ? '99+' : chatUnread}
-              size={16}
-              color="red"
-              offset={4}
-            >
-              <NavItem
-                {...item}
-                isActive={isActiveItem(item.href)}
-              />
-            </Indicator>
+        <Group gap={60} align="center" wrap="nowrap">
+          <List
+            align="center"
+            direction="horizontal"
+            gap={60}
+            items={navigationItems}
+            renderItem={item => (
+              <Indicator
+                key={item.href}
+                inline
+                disabled={item.href !== '/chats' || chatUnread === 0}
+                label={chatUnread > 99 ? '99+' : chatUnread}
+                size={16}
+                color="red"
+                offset={4}
+              >
+                <NavItem
+                  {...item}
+                  isActive={isActiveItem(item.href)}
+                />
+              </Indicator>
+            )}
+          />
+          {isAdmin && (
+            <NavItem
+              title="Админ"
+              href="/admin"
+              icon={IconShieldFilled}
+              isActive={location.pathname.startsWith('/admin')}
+            />
           )}
-        />
+        </Group>
       </Box>
 
       {/* Заглушка-распорка на мобильном, чтобы правая часть прижималась к краю */}
