@@ -6,14 +6,13 @@ import {
   Flex,
   Group,
   Loader,
-  NumberInput,
   Stack,
   Text,
   useMantineColorScheme,
 } from '@mantine/core';
 import { Calendar } from '@mantine/dates';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { IconAlertCircle, IconCheck, IconChevronLeft, IconChevronRight, IconLogin } from '@tabler/icons-react';
+import { IconAlertCircle, IconCheck, IconChevronLeft, IconChevronRight, IconClock, IconLogin } from '@tabler/icons-react';
 import { isAxiosError } from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ru';
@@ -33,59 +32,182 @@ const BOOKING_STATUS_LABELS: Record<string, string> = {
 interface BookingWidgetProps {
   listingId: string;
   pricePerHour: number;
-  maxQuantity: number;
+  bufferHours?: number;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
 }
 
-export const BookingWidget = ({ listingId, pricePerHour, maxQuantity }: BookingWidgetProps) => {
+function formatDuration(hours: number): string {
+  if (hours < 24) return `${hours} ч`;
+  const days = Math.floor(hours / 24);
+  const rem = hours % 24;
+  return rem > 0 ? `${days} д ${rem} ч` : `${days} д`;
+}
+
+export const BookingWidget = ({ listingId, pricePerHour, bufferHours, availableFrom, availableUntil }: BookingWidgetProps) => {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
   const { isAuthenticated, login } = useAuth();
 
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null); // null = same day as startDate
   const [startHour, setStartHour] = useState<number | null>(null);
   const [endHour, setEndHour] = useState<number | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [displayedDate, setDisplayedDate] = useState(() => dayjs().format('YYYY-MM-DD'));
 
-  const today = dayjs().startOf('day');
+  const todayStr = useMemo(() => dayjs().startOf('day').format('YYYY-MM-DD'), []);
+  const today = useMemo(() => dayjs(todayStr), [todayStr]);
+  const visibleMonth = useMemo(() => dayjs(displayedDate).startOf('month'), [displayedDate]);
 
-  const { data: slotsData, isLoading: slotsLoading } = useQuery({
-    queryKey: ['slots', listingId, selectedDate],
-    queryFn: () => rentService.getAvailableSlots({ listingId, date: selectedDate! }),
-    enabled: !!selectedDate,
+  const effectiveEndDate = endDate ?? startDate;
+  const isMultiDay = !!startDate && !!endDate && endDate !== startDate;
+
+  const noAvailability = availableFrom === null && availableUntil === null;
+  const minDate = availableFrom ? dayjs(availableFrom) : null;
+  const maxDate = availableUntil ? dayjs(availableUntil) : null;
+
+  // Тепловая карта занятости через /calendar
+  const calendarYear = visibleMonth.year();
+  const calendarMonth = visibleMonth.month() + 1;
+
+  const { data: calendarData } = useQuery({
+    queryKey: ['listing-calendar', listingId, calendarYear, calendarMonth],
+    queryFn: () => rentService.getListingCalendar({ listingId, year: calendarYear, month: calendarMonth }),
+    staleTime: 5 * 60 * 1000,
+    enabled: !noAvailability,
   });
 
-  const availableHours = useMemo(() => new Set(slotsData?.available_hours ?? []), [slotsData]);
+  const utilizationMap = useMemo(() => {
+    const map = new Map<string, number | null>();
+    calendarData?.days.forEach(d => map.set(d.date, d.utilization));
+    return map;
+  }, [calendarData]);
 
-  const mutation = useMutation({
-    mutationFn: bookingService.createBooking,
+  // Слоты начального дня
+  const { data: startSlotsData, isLoading: startSlotsLoading } = useQuery({
+    queryKey: ['slots', listingId, startDate],
+    queryFn: () => rentService.getAvailableSlots({ listingId, date: startDate! }),
+    enabled: !!startDate,
   });
 
-  const handleDateSelect = (date: string) => {
-    setSelectedDate(date);
+  // Слоты конечного дня (только при мультидневной аренде)
+  const { data: endSlotsData, isLoading: endSlotsLoading } = useQuery({
+    queryKey: ['slots', listingId, endDate],
+    queryFn: () => rentService.getAvailableSlots({ listingId, date: endDate! }),
+    enabled: !!endDate && endDate !== startDate,
+  });
+
+  const startAvailableHours = useMemo(
+    () => new Set(startSlotsData?.available_hours ?? []),
+    [startSlotsData],
+  );
+
+  const endAvailableHours = useMemo(
+    () => isMultiDay
+      ? new Set(endSlotsData?.available_hours ?? [])
+      : startAvailableHours,
+    [isMultiDay, endSlotsData, startAvailableHours],
+  );
+
+  // Варианты конечного часа для однодневного бронирования (непрерывная цепочка)
+  // Учитывает bufferHours: новое бронирование должно заканчиваться не позднее чем
+  // за bufferHours до ближайшего занятого слота (бекенд это не проверяет при создании)
+  const { options: sameDayEndOptions, bufferApplied: endBufferApplied } = useMemo(() => {
+    if (isMultiDay || startHour === null) return { options: [], bufferApplied: false };
+
+    // Первый недоступный час после startHour
+    let firstUnavailable: number | null = null;
+    for (let h = startHour + 1; h <= 23; h++) {
+      if (!startAvailableHours.has(h)) { firstUnavailable = h; break; }
+    }
+
+    // Есть ли доступные часы после заблокированной зоны?
+    // Если да — это занятый слот (бронирование + буфер), а не просто конец расписания
+    let hasAvailableAfterBlocked = false;
+    if (firstUnavailable !== null) {
+      for (let h = firstUnavailable + 1; h <= 23; h++) {
+        if (startAvailableHours.has(h)) { hasAvailableAfterBlocked = true; break; }
+      }
+    }
+
+    const buf = bufferHours ?? 0;
+    const bufferApplied = hasAvailableAfterBlocked && buf > 0;
+    const maxEnd = firstUnavailable !== null && bufferApplied
+      ? firstUnavailable - buf
+      : firstUnavailable ?? 24;
+
+    const options: number[] = [];
+    for (let h = startHour + 1; h <= 23; h++) {
+      if (!startAvailableHours.has(h - 1)) break;
+      if (h > maxEnd) break;
+      options.push(h);
+    }
+    return { options, bufferApplied };
+  }, [isMultiDay, startHour, startAvailableHours, bufferHours]);
+
+  const durationHours = useMemo(() => {
+    if (!startDate || startHour === null || !effectiveEndDate || endHour === null) return 0;
+    return dayjs(effectiveEndDate).hour(endHour).diff(dayjs(startDate).hour(startHour), 'hour');
+  }, [startDate, effectiveEndDate, startHour, endHour]);
+
+  const totalPrice = durationHours * pricePerHour;
+
+  const mutation = useMutation({ mutationFn: bookingService.createBooking });
+
+  const resetSelection = () => {
+    setStartDate(null);
+    setEndDate(null);
     setStartHour(null);
     setEndHour(null);
     mutation.reset();
   };
 
-  const handleStartHour = (hour: number) => {
-    setStartHour(hour);
-    setEndHour(null);
+  const handleDateClick = (dateStr: string) => {
     mutation.reset();
+
+    if (!startDate || (endHour !== null)) {
+      // Нет начала или уже всё выбрано — начинаем заново
+      setStartDate(dateStr);
+      setEndDate(null);
+      setStartHour(null);
+      setEndHour(null);
+      return;
+    }
+
+    if (startHour === null) {
+      // Начальный час ещё не выбран — просто меняем дату начала
+      setStartDate(dateStr);
+      setEndDate(null);
+      return;
+    }
+
+    // Начальный час выбран — выбираем дату окончания
+    if (dateStr < startDate) {
+      // Клик раньше начала — сброс
+      setStartDate(dateStr);
+      setEndDate(null);
+      setStartHour(null);
+      setEndHour(null);
+      return;
+    }
+
+    if (dateStr === startDate) {
+      // Клик на тот же день — сброс мультидневного режима
+      setEndDate(null);
+      setEndHour(null);
+      return;
+    }
+
+    // Другой день — конечная дата
+    setEndDate(dateStr);
+    setEndHour(null);
   };
 
-  const handleSubmit = () => {
-    if (!selectedDate || startHour === null || endHour === null || endHour <= startHour) return;
-    const base = dayjs(selectedDate).startOf('day');
-    mutation.mutate({
-      listing_id: listingId,
-      quantity,
-      start_time: base.hour(startHour).toISOString(),
-      end_time: base.hour(endHour).toISOString(),
-    });
+  const getUtilizationBg = (utilization: number | null): string => {
+    if (utilization === null) return isDark ? '#2a2a2a' : '#e8e8e8';
+    const hue = Math.round((1 - utilization / 100) * 120);
+    return `hsl(${hue}, ${isDark ? 55 : 65}%, ${isDark ? 30 : 88}%)`;
   };
-
-  const duration = startHour !== null && endHour !== null ? endHour - startHour : 0;
-  const totalPrice = duration * pricePerHour * quantity;
 
   const cardBg = isDark ? '#1a1a1a' : '#fff';
   const borderColor = isDark ? '#2a2a2a' : '#e9ecef';
@@ -94,11 +216,88 @@ export const BookingWidget = ({ listingId, pricePerHour, maxQuantity }: BookingW
   const textSlot = isDark ? '#81c784' : '#2e7d32';
   const textUnavail = isDark ? '#e57373' : '#c62828';
 
+  const HourGrid = ({
+    availableHours,
+    selected,
+    onSelect,
+    label,
+  }: {
+    availableHours: Set<number>;
+    selected: number | null;
+    onSelect: (h: number) => void;
+    label: string;
+  }) => (
+    <Box
+      style={{
+        border: `1px solid ${borderColor}`,
+        borderRadius: 14,
+        padding: '14px 16px',
+        backgroundColor: cardBg,
+      }}
+    >
+      <Text size="sm" fw={600} mb={10}>{label}</Text>
+      {availableHours.size === 0 ? (
+        <Text size="sm" c="dimmed">Нет доступных часов</Text>
+      ) : (
+        <Flex gap={4} wrap="wrap">
+          {Array.from({ length: 24 }, (_, h) => {
+            const avail = availableHours.has(h);
+            const isSel = selected === h;
+            return (
+              <Box
+                key={h}
+                onClick={() => avail && onSelect(h)}
+                style={{
+                  padding: '5px 8px',
+                  borderRadius: 7,
+                  cursor: avail ? 'pointer' : 'default',
+                  minWidth: 54,
+                  textAlign: 'center',
+                  backgroundColor: isSel ? '#FF8104' : avail ? bgSlot : bgSlotUnavailable,
+                  border: `1px solid ${isSel ? '#FF8104' : avail ? (isDark ? '#388e3c' : '#a5d6a7') : (isDark ? '#5a2020' : '#ffcdd2')}`,
+                  transition: 'background-color 0.12s',
+                }}
+              >
+                <Text size="xs" fw={500} c={isSel ? '#fff' : avail ? textSlot : textUnavail}>
+                  {h.toString().padStart(2, '0')}:00
+                </Text>
+                {!avail && (
+                  <Text size="xs" c={textUnavail} style={{ fontSize: 9, lineHeight: 1.2 }}>занято</Text>
+                )}
+              </Box>
+            );
+          })}
+        </Flex>
+      )}
+    </Box>
+  );
+
+  if (noAvailability) {
+    return (
+      <Stack gap="md">
+        <Text size="xl" fw={600}>Забронировать</Text>
+        <Alert icon={<IconAlertCircle size={16} />} color="gray" radius="md">
+          <Text size="sm">Объявление сейчас недоступно для бронирования — расписание не задано или все периоды истекли.</Text>
+        </Alert>
+      </Stack>
+    );
+  }
+
   return (
     <Stack gap="md">
       <Text size="xl" fw={600}>Забронировать</Text>
 
-      {/* Инлайн-календарь */}
+      {/* Инфо о буфере */}
+      {!!bufferHours && bufferHours > 0 && (
+        <Flex align="center" gap={6} px={2}>
+          <IconClock size={14} color="#868e96" />
+          <Text size="xs" c="dimmed">
+            Буфер между арендами: <b>{bufferHours} ч</b> — время на подготовку предмета
+          </Text>
+        </Flex>
+      )}
+
+      {/* Календарь */}
       <Box
         style={{
           border: `1px solid ${borderColor}`,
@@ -108,18 +307,33 @@ export const BookingWidget = ({ listingId, pricePerHour, maxQuantity }: BookingW
           overflow: 'hidden',
         }}
       >
+        {/* Подсказка по выбору */}
+        <Text size="xs" c="dimmed" mb={10} ta="center">
+          {!startDate
+            ? 'Выберите дату начала аренды'
+            : startHour === null
+              ? 'Выберите время начала ниже'
+              : isMultiDay
+                ? `${dayjs(startDate).locale('ru').format('D MMM')} → ${dayjs(endDate!).locale('ru').format('D MMM')} · выберите время окончания`
+                : 'Выберите дату окончания или другой день для мультидневной аренды'}
+        </Text>
+
         <Calendar
           locale="ru"
           maxLevel="month"
+          date={displayedDate}
+          onDateChange={setDisplayedDate}
           previousIcon={<IconChevronLeft size={27} stroke={2.5} />}
           nextIcon={<IconChevronRight size={27} stroke={2.5} />}
           getDayProps={date => {
             const d = dayjs(date);
+            const dateStr = d.format('YYYY-MM-DD');
             const isPast = d.isBefore(today, 'day');
-            const isSelected = !!selectedDate && d.isSame(selectedDate, 'day');
-            const isToday = d.isSame(today, 'day');
+            const isOutsideRange =
+              (minDate ? d.isBefore(minDate, 'day') : false) ||
+              (maxDate ? d.isAfter(maxDate, 'day') : false);
 
-            if (isPast) {
+            if (isPast || isOutsideRange) {
               return {
                 disabled: true,
                 style: {
@@ -128,27 +342,37 @@ export const BookingWidget = ({ listingId, pricePerHour, maxQuantity }: BookingW
                   borderRadius: 8,
                   border: '2px solid transparent',
                   cursor: 'not-allowed',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 },
               };
             }
 
+            const isStart = dateStr === startDate;
+            const isEnd = !!effectiveEndDate && dateStr === effectiveEndDate && isMultiDay;
+            const isInRange = isMultiDay && !!startDate && !!endDate
+              && dateStr > startDate && dateStr < endDate;
+            const utilization = utilizationMap.get(dateStr);
+
+            const occupancyBg = !isStart && !isEnd && !isInRange && utilization !== undefined
+              ? getUtilizationBg(utilization)
+              : undefined;
+
             return {
-              onClick: () => handleDateSelect(date),
+              onClick: () => handleDateClick(dateStr),
               style: {
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: isSelected
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backgroundColor: isStart || isEnd
                   ? '#FF8104'
-                  : isToday
-                    ? isDark ? 'rgba(255,129,4,0.18)' : 'rgba(255,129,4,0.12)'
-                    : undefined,
-                color: isSelected ? '#fff' : isToday ? '#FF8104' : undefined,
-                fontWeight: isToday || isSelected ? 700 : undefined,
-                border: isToday && !isSelected ? '2px solid #FF8104' : '2px solid transparent',
+                  : isInRange
+                    ? 'rgba(255,129,4,0.15)'
+                    : occupancyBg,
+                color: isStart || isEnd ? '#fff' : undefined,
+                fontWeight: isStart || isEnd ? 700 : undefined,
+                border: isStart || isEnd
+                  ? '2px solid #FF8104'
+                  : isInRange
+                    ? '2px solid rgba(255,129,4,0.3)'
+                    : '2px solid transparent',
                 borderRadius: 8,
               },
             };
@@ -156,207 +380,100 @@ export const BookingWidget = ({ listingId, pricePerHour, maxQuantity }: BookingW
           styles={{
             month: { width: '100%', tableLayout: 'fixed' as const },
             monthCell: { padding: '3px' },
-            day: {
-              width: '100%',
-              height: 46,
-              fontSize: 15,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            },
-            calendarHeader: {
-              marginBottom: 14,
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-            },
+            day: { width: '100%', height: 46, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+            calendarHeader: { marginBottom: 14, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
             calendarHeaderControl: { width: 44, height: 44, minWidth: 44, flex: 'none' },
-            calendarHeaderLevel: {
-              fontSize: 22,
-              fontWeight: 800,
-              letterSpacing: '-0.02em',
-              cursor: 'default',
-              pointerEvents: 'none',
-              flex: 'none',
-              padding: '0 4px',
-            },
-            weekday: {
-              textAlign: 'center',
-              fontSize: 11,
-              paddingBottom: 8,
-              textTransform: 'uppercase',
-              letterSpacing: '0.07em',
-              color: isDark ? '#888' : '#aaa',
-            },
+            calendarHeaderLevel: { fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', cursor: 'default', pointerEvents: 'none', flex: 'none', padding: '0 4px' },
+            weekday: { textAlign: 'center', fontSize: 11, paddingBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em', color: isDark ? '#888' : '#aaa' },
           }}
         />
       </Box>
 
-      {/* Слоты выбранного дня */}
-      {selectedDate && slotsLoading && (
-        <Flex align="center" gap="sm">
-          <Loader size="xs" />
-          <Text size="sm" c="dimmed">Загрузка доступных часов...</Text>
-        </Flex>
+      {/* Время начала */}
+      {startDate && (
+        startSlotsLoading
+          ? <Flex align="center" gap="sm"><Loader size="xs" /><Text size="sm" c="dimmed">Загрузка слотов...</Text></Flex>
+          : <HourGrid
+              availableHours={startAvailableHours}
+              selected={startHour}
+              onSelect={h => { setStartHour(h); setEndHour(null); mutation.reset(); }}
+              label={`${dayjs(startDate).locale('ru').format('D MMMM')} — время начала`}
+            />
       )}
 
-      {selectedDate && !slotsLoading && slotsData && (
+      {/* Время окончания — однодневное */}
+      {!isMultiDay && startHour !== null && (
         <Box
-          style={{
-            border: `1px solid ${borderColor}`,
-            borderRadius: 14,
-            padding: '14px 16px',
-            backgroundColor: cardBg,
-          }}
+          style={{ border: `1px solid ${borderColor}`, borderRadius: 14, padding: '14px 16px', backgroundColor: cardBg }}
         >
           <Text size="sm" fw={600} mb={10}>
-            {dayjs(selectedDate).locale('ru').format('D MMMM YYYY')} — выберите время начала
+            {dayjs(startDate!).locale('ru').format('D MMMM')} — время окончания
           </Text>
-
-          {availableHours.size === 0 ? (
-            <Text size="sm" c="dimmed">Нет доступных часов на этот день</Text>
+          {sameDayEndOptions.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              {endBufferApplied
+                ? `Нет доступных часов — слишком близко к следующему бронированию (буфер: ${bufferHours} ч). Попробуйте выбрать более раннее время начала.`
+                : 'Нет доступных часов для продолжения'}
+            </Text>
           ) : (
-            <>
-              <Flex gap={4} wrap="wrap" mb={10}>
-                {Array.from({ length: 24 }, (_, h) => {
-                  const avail = availableHours.has(h);
-                  const isSelected = startHour === h;
-                  return (
-                    <Box
-                      key={h}
-                      onClick={() => avail && handleStartHour(h)}
-                      style={{
-                        padding: '5px 8px',
-                        borderRadius: 7,
-                        cursor: avail ? 'pointer' : 'default',
-                        backgroundColor: isSelected
-                          ? '#FF8104'
-                          : avail ? bgSlot : bgSlotUnavailable,
-                        border: `1px solid ${
-                          isSelected
-                            ? '#FF8104'
-                            : avail
-                              ? isDark ? '#388e3c' : '#a5d6a7'
-                              : isDark ? '#5a2020' : '#ffcdd2'
-                        }`,
-                        transition: 'background-color 0.12s',
-                        minWidth: 54,
-                        textAlign: 'center',
-                      }}
-                    >
-                      <Text size="xs" fw={500} c={isSelected ? '#fff' : avail ? textSlot : textUnavail}>
-                        {h.toString().padStart(2, '0')}:00
-                      </Text>
-                      {!avail && (
-                        <Text size="xs" c={textUnavail} style={{ fontSize: 9, lineHeight: 1.2 }}>
-                          занято
-                        </Text>
-                      )}
-                    </Box>
-                  );
-                })}
-              </Flex>
-
-              {/* Легенда */}
-              <Flex gap="lg" mt={6}>
-                <Flex gap={4} align="center">
-                  <Box style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: bgSlot, border: `1px solid ${isDark ? '#388e3c' : '#a5d6a7'}` }} />
-                  <Text size="xs" c="dimmed">Доступно</Text>
-                </Flex>
-                <Flex gap={4} align="center">
-                  <Box style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: bgSlotUnavailable, border: `1px solid ${isDark ? '#5a2020' : '#ffcdd2'}` }} />
-                  <Text size="xs" c="dimmed">Занято / вне расписания</Text>
-                </Flex>
-              </Flex>
-            </>
-          )}
-        </Box>
-      )}
-
-      {/* Время окончания */}
-      {startHour !== null && (
-        <Box
-          style={{
-            border: `1px solid ${borderColor}`,
-            borderRadius: 14,
-            padding: '14px 16px',
-            backgroundColor: cardBg,
-          }}
-        >
-          <Text size="sm" fw={600} mb={10}>Выберите время окончания</Text>
-          <Flex gap={4} wrap="wrap">
-            {(() => {
-              const endOptions: number[] = [];
-              for (let h = startHour + 1; h <= 23; h++) {
-                if (!availableHours.has(h - 1)) break;
-                endOptions.push(h);
-              }
-              if (endOptions.length === 0) {
-                return <Text size="sm" c="dimmed">Нет доступных часов окончания</Text>;
-              }
-              return endOptions.map(h => {
-                const isSelected = endHour === h;
+            <Flex gap={4} wrap="wrap">
+              {sameDayEndOptions.map(h => {
+                const isSel = endHour === h;
                 return (
                   <Box
                     key={h}
                     onClick={() => { setEndHour(h); mutation.reset(); }}
                     style={{
-                      padding: '5px 8px',
-                      borderRadius: 7,
-                      cursor: 'pointer',
-                      minWidth: 54,
-                      textAlign: 'center',
-                      backgroundColor: isSelected ? '#FF8104' : bgSlot,
-                      border: `1px solid ${isSelected ? '#FF8104' : isDark ? '#388e3c' : '#a5d6a7'}`,
+                      padding: '5px 8px', borderRadius: 7, cursor: 'pointer', minWidth: 54, textAlign: 'center',
+                      backgroundColor: isSel ? '#FF8104' : bgSlot,
+                      border: `1px solid ${isSel ? '#FF8104' : isDark ? '#388e3c' : '#a5d6a7'}`,
                       transition: 'background-color 0.12s',
                     }}
                   >
-                    <Text size="xs" fw={500} c={isSelected ? '#fff' : textSlot}>
+                    <Text size="xs" fw={500} c={isSel ? '#fff' : textSlot}>
                       {h.toString().padStart(2, '0')}:00
                     </Text>
                   </Box>
                 );
-              });
-            })()}
-          </Flex>
+              })}
+            </Flex>
+          )}
+          <Text size="xs" c="dimmed" mt={10}>
+            💡 Или кликните на другой день в календаре для мультидневной аренды
+          </Text>
         </Box>
       )}
 
-      {/* Количество */}
-      {maxQuantity > 1 && (
-        <NumberInput
-          label="Количество"
-          value={quantity}
-          onChange={v => setQuantity(Number(v) || 1)}
-          min={1}
-          max={maxQuantity}
-          radius="md"
-          style={{ maxWidth: 160 }}
-        />
+      {/* Время окончания — мультидневное */}
+      {isMultiDay && startHour !== null && (
+        endSlotsLoading
+          ? <Flex align="center" gap="sm"><Loader size="xs" /><Text size="sm" c="dimmed">Загрузка слотов...</Text></Flex>
+          : <HourGrid
+              availableHours={endAvailableHours}
+              selected={endHour}
+              onSelect={h => { setEndHour(h); mutation.reset(); }}
+              label={`${dayjs(endDate!).locale('ru').format('D MMMM')} — время окончания`}
+            />
       )}
 
       {/* Итог */}
-      {duration > 0 && (
-        <Box
-          p="sm"
-          style={{
-            borderRadius: 12,
-            backgroundColor: isDark ? '#1a1a1a' : '#f8f9fa',
-            border: `1px solid ${borderColor}`,
-          }}
-        >
+      {durationHours > 0 && (
+        <Box p="sm" style={{ borderRadius: 12, backgroundColor: isDark ? '#1a1a1a' : '#f8f9fa', border: `1px solid ${borderColor}` }}>
           <Group justify="space-between">
             <Text size="sm" c="dimmed">
-              {duration} ч × {pricePerHour} ₽{maxQuantity > 1 ? ` × ${quantity} шт.` : ''}
+              {formatDuration(durationHours)} × {pricePerHour} ₽/ч
             </Text>
             <Text fw={700} size="md">{totalPrice} ₽</Text>
           </Group>
+          {isMultiDay && (
+            <Text size="xs" c="dimmed" mt={4}>
+              Аренда: {dayjs(startDate!).locale('ru').format('D MMM HH:mm').replace('HH', startHour!.toString().padStart(2, '0')).replace(':mm', ':00')} — {dayjs(endDate!).locale('ru').format('D MMM HH:mm').replace('HH', endHour!.toString().padStart(2, '0')).replace(':mm', ':00')}
+            </Text>
+          )}
         </Box>
       )}
 
-      {/* Статус бронирования */}
+      {/* Статус */}
       {mutation.isSuccess && (
         <Alert icon={<IconCheck size={16} />} color="green" radius="md">
           <Text fw={600}>Бронирование создано!</Text>
@@ -374,23 +491,36 @@ export const BookingWidget = ({ listingId, pricePerHour, maxQuantity }: BookingW
         </Alert>
       )}
 
-      {/* Кнопка */}
-      {!isAuthenticated ? (
-        <Button fullWidth radius="md" color="orange" leftSection={<IconLogin size={18} />} onClick={login}>
-          Войти для бронирования
-        </Button>
-      ) : (
-        <Button
-          fullWidth
-          radius="md"
-          color="orange"
-          disabled={!selectedDate || startHour === null || endHour === null || mutation.isPending || mutation.isSuccess}
-          loading={mutation.isPending}
-          onClick={handleSubmit}
-        >
-          Забронировать
-        </Button>
-      )}
+      {/* Кнопки */}
+      <Stack gap="xs">
+        {!isAuthenticated ? (
+          <Button fullWidth radius="md" color="orange" leftSection={<IconLogin size={18} />} onClick={login}>
+            Войти для бронирования
+          </Button>
+        ) : (
+          <Button
+            fullWidth radius="md" color="orange"
+            disabled={!startDate || startHour === null || endHour === null || durationHours <= 0 || mutation.isPending || mutation.isSuccess}
+            loading={mutation.isPending}
+            onClick={() => {
+              if (!startDate || !effectiveEndDate || startHour === null || endHour === null) return;
+              mutation.mutate({
+                listing_id: listingId,
+                quantity: 1,
+                start_time: dayjs(startDate).startOf('day').hour(startHour).toISOString(),
+                end_time: dayjs(effectiveEndDate).startOf('day').hour(endHour).toISOString(),
+              });
+            }}
+          >
+            Забронировать
+          </Button>
+        )}
+        {(startDate || endDate) && !mutation.isSuccess && (
+          <Button fullWidth radius="md" variant="subtle" color="gray" onClick={resetSelection}>
+            Сбросить выбор
+          </Button>
+        )}
+      </Stack>
     </Stack>
   );
 };

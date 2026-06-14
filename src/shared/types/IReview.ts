@@ -9,4 +9,5 @@ export interface IReview {
   text: string;
   rating: number;
   authorIsPremium?: boolean;
+  listingId?: string;
 }

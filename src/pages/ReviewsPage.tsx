@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Box,
   Card,
@@ -7,14 +8,15 @@ import {
   Image,
   Loader,
   Rating,
+  Stack,
   Text,
   Title,
 } from '@mantine/core';
+import { IconChevronRight, IconMapPin } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { ReviewsList } from '@entities/review';
+import { ReviewsList, ReviewsSlider } from '@entities/review';
 import { UserMiniCard } from '@entities/user';
 import { rentService, reviewsService } from '@shared/api';
 import { IReview } from '@shared/types';
@@ -66,31 +68,15 @@ const ListingHeaderCard = ({ listingId }: { listingId: string }) => {
 
 const PAGE_SIZE = 20;
 
-export const ReviewsPage = () => {
-  const [searchParams] = useSearchParams();
-  const rawType = searchParams.get('type');
-  const type: 'user' | 'listing' | null = rawType === 'user' || rawType === 'listing' ? rawType : null;
-  const id = searchParams.get('id');
-
+// Страница отзывов по листингу — пагинация как раньше
+const ListingReviewsPage = ({ listingId }: { listingId: string }) => {
   const [page, setPage] = useState(1);
   const [allReviews, setAllReviews] = useState<IReview[]>([]);
   const [total, setTotal] = useState(0);
 
-  useEffect(() => {
-    setPage(1);
-    setAllReviews([]);
-    setTotal(0);
-  }, [type, id]);
-
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['reviews', type, id, page],
-    queryFn: () => {
-      if (!id || !type) return Promise.resolve({ items: [], total: 0 });
-      return type === 'user'
-        ? reviewsService.getReviewsByUserId(id, page, PAGE_SIZE)
-        : reviewsService.getReviewsByRentalId(id, page, PAGE_SIZE);
-    },
-    enabled: !!id && !!type,
+    queryKey: ['reviews', 'listing', listingId, page],
+    queryFn: () => reviewsService.getReviewsByRentalId(listingId, page, PAGE_SIZE),
   });
 
   useEffect(() => {
@@ -100,6 +86,101 @@ export const ReviewsPage = () => {
   }, [data, page]);
 
   const hasMore = allReviews.length < total;
+
+  if (isLoading && page === 1) {
+    return <Flex justify="center" py="xl"><Loader color="#FF8104" /></Flex>;
+  }
+
+  if (allReviews.length === 0) {
+    return <Text c="dimmed" ta="center" py="xl">Отзывов пока нет.</Text>;
+  }
+
+  return (
+    <ReviewsList
+      reviews={allReviews}
+      hasMore={hasMore}
+      isLoading={isFetching}
+      onShowAll={() => setPage(prev => prev + 1)}
+    />
+  );
+};
+
+// Страница отзывов по пользователю — листинги с отзывами, как в публичном профиле
+const UserReviewsPage = ({ userId }: { userId: string }) => {
+  const navigate = useNavigate();
+
+  const { data: listingsData, isLoading } = useQuery({
+    queryKey: ['userListings', userId],
+    queryFn: () => rentService.getUserListings(userId),
+  });
+
+  const listings = listingsData?.items ?? [];
+
+  if (isLoading) {
+    return <Flex justify="center" py="xl"><Loader color="#FF8104" /></Flex>;
+  }
+
+  if (listings.length === 0) {
+    return <Text c="dimmed" ta="center" py="xl">Отзывов пока нет.</Text>;
+  }
+
+  return (
+    <Stack gap="xl">
+      {listings.map(listing => (
+        <Box key={listing.id}>
+          <Card
+            shadow="sm"
+            padding="lg"
+            radius="lg"
+            withBorder
+            mb="sm"
+            style={{ borderColor: '#e2e8f0', cursor: 'pointer' }}
+            onClick={() => navigate(`/rent-page/${listing.id}`)}
+          >
+            <Flex gap="lg" align="center">
+              <Image
+                src={listing.previewImage?.url || '/placeholder.jpg'}
+                fallbackSrc="/placeholder.jpg"
+                width={100}
+                height={75}
+                radius="md"
+                style={{ objectFit: 'cover', width: 100, height: 75, flexShrink: 0 }}
+              />
+              <Box style={{ flex: 1, minWidth: 0 }}>
+                <Group justify="space-between" align="flex-start" wrap="nowrap">
+                  <Text fw={700} size="md" lineClamp={2} style={{ flex: 1 }}>{listing.title}</Text>
+                  <IconChevronRight size={18} color="#aaa" style={{ flexShrink: 0 }} />
+                </Group>
+                <Group gap={4} mt={4} mb={6}>
+                  <Rating value={listing.rating || 0} fractions={2} readOnly size="xs" color="orange" />
+                  <Text size="xs" c="dimmed">({listing.reviewCount ?? 0})</Text>
+                </Group>
+                <Group gap="xl">
+                  <Text fw={600} size="sm" c="#FF8104">
+                    {listing.cost.payment} ₽/{listing.cost.priceUnit}
+                  </Text>
+                  {listing.address && (
+                    <Group gap={4}>
+                      <IconMapPin size={13} color="#aaa" />
+                      <Text size="xs" c="dimmed" lineClamp={1}>{listing.address}</Text>
+                    </Group>
+                  )}
+                </Group>
+              </Box>
+            </Flex>
+          </Card>
+          <ReviewsSlider listingId={listing.id} excludeAuthorId={userId} />
+        </Box>
+      ))}
+    </Stack>
+  );
+};
+
+export const ReviewsPage = () => {
+  const [searchParams] = useSearchParams();
+  const rawType = searchParams.get('type');
+  const type: 'user' | 'listing' | null = rawType === 'user' || rawType === 'listing' ? rawType : null;
+  const id = searchParams.get('id');
 
   if (!type || !id) {
     return (
@@ -112,24 +193,15 @@ export const ReviewsPage = () => {
   return (
     <Container size="sm" py="xl">
       {type === 'user' ? (
-        <UserHeaderCard userId={id} />
+        <>
+          <UserHeaderCard userId={id} />
+          <UserReviewsPage userId={id} />
+        </>
       ) : (
-        <ListingHeaderCard listingId={id} />
-      )}
-
-      {isLoading && page === 1 ? (
-        <Flex justify="center" py="xl">
-          <Loader color="#FF8104" />
-        </Flex>
-      ) : allReviews.length === 0 ? (
-        <Text c="dimmed" ta="center" py="xl">Отзывов пока нет.</Text>
-      ) : (
-        <ReviewsList
-          reviews={allReviews}
-          hasMore={hasMore}
-          isLoading={isFetching}
-          onShowAll={() => setPage(prev => prev + 1)}
-        />
+        <>
+          <ListingHeaderCard listingId={id} />
+          <ListingReviewsPage listingId={id} />
+        </>
       )}
     </Container>
   );

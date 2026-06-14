@@ -246,11 +246,11 @@ export const PublicProfile = ({ userId }: PublicProfileProps) => {
         </Flex>
       </Card>
 
-      {/* Отзывы о продавце */}
-      <Title order={3} mb="lg">Отзывы о продавце</Title>
+      {/* Отзывы об арендодателе */}
+      <Title order={3} mb="lg">Отзывы об арендодателе</Title>
 
       {allReviews.length === 0 && !reviewsFetching ? (
-        <Text c="dimmed" mb="xl">Отзывов о продавце пока нет.</Text>
+        <Text c="dimmed" mb="xl">Отзывов об арендодателе пока нет.</Text>
       ) : (
         <Stack gap="md" mb="lg">
           {allReviews.map(review => (
@@ -274,8 +274,8 @@ export const PublicProfile = ({ userId }: PublicProfileProps) => {
 
       <Divider my="xl" />
 
-      {/* Объявления продавца */}
-      <Title order={3} mb="lg">Объявления продавца</Title>
+      {/* Объявления пользователя */}
+      <Title order={3} mb="lg">Объявления пользователя</Title>
 
       {listingsLoading ? (
         <Flex justify="center" py="xl"><Loader color="#FF8104" /></Flex>

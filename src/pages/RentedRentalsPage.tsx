@@ -202,8 +202,9 @@ export const RentedRentalsPage: FC = () => {
           total_price: b.total_price,
           created_at: b.created_at,
           updated_at: b.updated_at,
+          has_my_review: b.has_my_review,
           listingTitle: b.listing.title,
-          listingImage: b.listing.cover_url,
+          listingImage: b.listing.cover_url ?? undefined,
           ownerIdForDisplay: b.listing.owner_id,
         }))
       : (ownerData?.items ?? []).map(b => ({
@@ -218,8 +219,9 @@ export const RentedRentalsPage: FC = () => {
           total_price: b.total_price,
           created_at: b.created_at,
           updated_at: b.updated_at,
+          has_my_review: b.has_my_review,
           listingTitle: b.listing.title,
-          listingImage: b.listing.cover_url,
+          listingImage: b.listing.cover_url ?? undefined,
         }));
 
   return (
@@ -265,7 +267,7 @@ export const RentedRentalsPage: FC = () => {
         {!isLoading && bookings.length > 0 && (
           <Stack gap="md">
             {bookings.map(booking => {
-              const hasReview = reviewedBookings.has(booking.booking_id);
+              const hasReview = booking.has_my_review || reviewedBookings.has(booking.booking_id);
               const isHighlighted = highlightActive && booking.booking_id === highlightBookingId;
               const pendingExtension = activeDetailsMap[booking.booking_id]?.pending_extension;
 

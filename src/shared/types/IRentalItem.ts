@@ -21,4 +21,6 @@ export interface IRentalItem {
   lat?: number;
   lon?: number;
   ownerIsPremium?: boolean;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
 }

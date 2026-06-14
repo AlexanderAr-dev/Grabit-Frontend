@@ -13,7 +13,10 @@ import { SearchInput } from './SearchInput';
 type ViewMode = 'list' | 'map';
 
 export const RentalsView = () => {
-  const [mode, setMode] = useState<ViewMode>('list');
+  const [mode, setMode] = useState<ViewMode>(() => {
+    const saved = sessionStorage.getItem('rentals_view_mode');
+    return saved === 'map' ? 'map' : 'list';
+  });
   const [inputValue, setInputValue] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -87,7 +90,7 @@ export const RentalsView = () => {
             {(['list', 'map'] as ViewMode[]).map((m, i) => (
               <UnstyledButton
                 key={m}
-                onClick={() => setMode(m)}
+                onClick={() => { setMode(m); sessionStorage.setItem('rentals_view_mode', m); }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

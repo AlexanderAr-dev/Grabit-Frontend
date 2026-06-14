@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Flex, Image, Loader, Slider, Text } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { IconMapPin } from '@tabler/icons-react';
+import { IconMapPin, IconPackage } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Map, Marker, Overlay } from 'pigeon-maps';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { rentService } from '@shared/api';
 import { IRentalItem } from '@shared/types';
@@ -18,6 +18,30 @@ const RADIUS_MARKS = [
 ];
 
 const DEFAULT_CENTER: [number, number] = [55.751574, 37.573856];
+const STORAGE_KEY = 'map_search_state';
+
+interface MapState {
+  center: [number, number];
+  zoom: number;
+  clickedPoint: [number, number] | null;
+  radiusSlider: number;
+  selectedId: string | null;
+}
+
+function loadMapState(): Partial<MapState> {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveMapState(state: MapState) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+}
 
 interface MapSearchFilters {
   categoryId?: number | null;
@@ -30,12 +54,20 @@ interface Props {
 }
 
 export const MapSearchView = ({ filters }: Props) => {
-  const [center, setCenter] = useState<[number, number]>(DEFAULT_CENTER);
-  const [zoom, setZoom] = useState(10);
-  const [clickedPoint, setClickedPoint] = useState<[number, number] | null>(null);
-  const [radiusSlider, setRadiusSlider] = useState(25);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const saved = useMemo(() => loadMapState(), []);
+
+  const [center, setCenter] = useState<[number, number]>(saved.center ?? DEFAULT_CENTER);
+  const [zoom, setZoom] = useState(saved.zoom ?? 10);
+  const [clickedPoint, setClickedPoint] = useState<[number, number] | null>(saved.clickedPoint ?? null);
+  const [radiusSlider, setRadiusSlider] = useState(saved.radiusSlider ?? 25);
+  const [selectedId, setSelectedId] = useState<string | null>(saved.selectedId ?? null);
   const [address, setAddress] = useState<string | null>(null);
+
+  // Сохраняем состояние в sessionStorage при каждом изменении
+  useEffect(() => {
+    saveMapState({ center, zoom, clickedPoint, radiusSlider, selectedId });
+  }, [center, zoom, clickedPoint, radiusSlider, selectedId]);
 
   const [debouncedPoint] = useDebouncedValue(clickedPoint, 300);
 
@@ -68,6 +100,7 @@ export const MapSearchView = ({ filters }: Props) => {
         page_size: 100,
       }),
     enabled: !!debouncedPoint,
+    staleTime: 60 * 1000,
   });
 
   const listings = data?.items ?? [];
@@ -75,7 +108,9 @@ export const MapSearchView = ({ filters }: Props) => {
     l.lat != null && l.lon != null
   );
 
-  const selectedListing = selectedId ? listings.find(l => l.id === selectedId) ?? null : null;
+  const selectedListing = selectedId
+    ? withCoords.find(l => l.id === selectedId) ?? null
+    : null;
 
   const handleMapClick = useCallback(({ latLng }: { latLng: [number, number] }) => {
     setClickedPoint(latLng);
@@ -90,11 +125,7 @@ export const MapSearchView = ({ filters }: Props) => {
         px={20}
         py={14}
         mb={12}
-        style={{
-          background: '#f8f9fa',
-          borderRadius: 16,
-          border: '1px solid #e9ecef',
-        }}
+        style={{ background: '#f8f9fa', borderRadius: 16, border: '1px solid #e9ecef' }}
       >
         <Flex align="center" gap={20} wrap="nowrap">
           <Text size="sm" fw={600} style={{ whiteSpace: 'nowrap', minWidth: 140 }}>
@@ -130,7 +161,7 @@ export const MapSearchView = ({ filters }: Props) => {
             {isLoading
               ? <Loader size={14} color="#FF8104" />
               : <Text size="sm" fw={500} c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                  — найдено: <span style={{ color: '#FF8104' }}>{listings.length}</span>
+                  — найдено: <span style={{ color: '#FF8104' }}>{withCoords.length}</span>
                 </Text>
             }
           </>
@@ -150,65 +181,66 @@ export const MapSearchView = ({ filters }: Props) => {
             <Marker anchor={clickedPoint} width={42} color="#FF8104" />
           )}
 
-          {/* Мини-карточки объявлений */}
+          {/* Balloon-метки */}
           {withCoords.map(listing => {
             const isSelected = listing.id === selectedId;
+            const size = isSelected ? 44 : 36;
+            const color = isSelected ? '#e67300' : '#FF8104';
             return (
               <Overlay key={listing.id} anchor={[listing.lat, listing.lon]}>
                 <Box
                   onClick={e => { e.stopPropagation(); setSelectedId(isSelected ? null : listing.id); }}
                   style={{
                     transform: 'translate(-50%, -100%)',
-                    marginBottom: 8,
                     cursor: 'pointer',
-                    filter: isSelected ? 'drop-shadow(0 4px 12px rgba(255,129,4,0.5))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.2))',
-                    transition: 'filter 0.15s',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    transition: 'transform 0.15s',
                   }}
                 >
+                  {/* Круглый пузырь */}
                   <Box
                     style={{
-                      background: '#fff',
-                      borderRadius: 10,
-                      overflow: 'hidden',
-                      width: 150,
-                      border: isSelected ? '2px solid #FF8104' : '2px solid #fff',
-                      transition: 'border-color 0.15s',
+                      width: size,
+                      height: size,
+                      borderRadius: '50%',
+                      background: color,
+                      border: `3px solid #fff`,
+                      boxShadow: isSelected
+                        ? '0 4px 16px rgba(255,129,4,0.55)'
+                        : '0 2px 8px rgba(0,0,0,0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.15s',
                     }}
                   >
-                    {listing.previewImage ? (
-                      <img
-                        src={listing.previewImage.url}
-                        alt=""
-                        style={{ width: '100%', height: 80, objectFit: 'cover', display: 'block' }}
-                      />
-                    ) : (
-                      <Box style={{ width: '100%', height: 80, background: '#f1f3f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <IconMapPin size={24} color="#adb5bd" />
-                      </Box>
-                    )}
-                    <Box px={8} py={6}>
-                      <Text size="xs" fw={600} lineClamp={1} style={{ color: '#1a1a2e' }}>
-                        {listing.title}
-                      </Text>
-                      <Text size="xs" fw={700} style={{ color: '#FF8104', marginTop: 2 }}>
-                        {listing.cost.payment} ₽/ч
-                      </Text>
-                    </Box>
+                    <IconPackage size={isSelected ? 22 : 18} color="#fff" stroke={2} />
                   </Box>
                   {/* Хвостик */}
-                  <Box style={{ width: 0, height: 0, borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '8px solid #fff', margin: '0 auto' }} />
+                  <Box
+                    style={{
+                      width: 0,
+                      height: 0,
+                      borderLeft: '6px solid transparent',
+                      borderRight: '6px solid transparent',
+                      borderTop: `8px solid ${color}`,
+                      marginTop: -1,
+                    }}
+                  />
                 </Box>
               </Overlay>
             );
           })}
 
-          {/* Большой попап при клике */}
-          {selectedListing && selectedListing.lat != null && selectedListing.lon != null && (
-            <Overlay anchor={[selectedListing.lat!, selectedListing.lon!]}>
+          {/* Попап при клике на метку */}
+          {selectedListing && (
+            <Overlay anchor={[selectedListing.lat, selectedListing.lon]}>
               <Box
                 onClick={e => e.stopPropagation()}
                 style={{
-                  transform: 'translate(-50%, calc(-100% - 130px))',
+                  transform: 'translate(-50%, calc(-100% - 52px))',
                   background: '#fff',
                   borderRadius: 14,
                   boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
@@ -231,20 +263,20 @@ export const MapSearchView = ({ filters }: Props) => {
                     <Text size="md" fw={800} style={{ color: '#FF8104' }}>
                       {selectedListing.cost.payment} ₽/ч
                     </Text>
-                    <Link
-                      to={`/rent/${selectedListing.id}`}
+                    <Box
+                      onClick={() => navigate(`/rent-page/${selectedListing.id}`)}
                       style={{
                         fontSize: 13,
                         color: '#fff',
                         background: '#FF8104',
                         borderRadius: 8,
                         padding: '4px 12px',
-                        textDecoration: 'none',
                         fontWeight: 600,
+                        cursor: 'pointer',
                       }}
                     >
                       Открыть →
-                    </Link>
+                    </Box>
                   </Flex>
                 </Box>
               </Box>

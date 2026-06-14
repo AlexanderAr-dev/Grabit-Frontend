@@ -26,7 +26,7 @@ function MediaItem({ item, height, onClick }: { item: IMediaType; height: number
       src={item.url}
       h={height}
       w="100%"
-      style={{ objectFit: 'cover', cursor: onClick ? 'zoom-in' : undefined, display: 'block' }}
+      style={{ objectFit: 'cover', cursor: onClick ? 'zoom-in' : undefined, display: 'block', height: '100%' }}
       fallbackSrc="https://via.placeholder.com/400"
       onClick={onClick}
     />
@@ -110,10 +110,10 @@ export const MediaGallery = ({ media }: MediaGalleryProps) => {
 
   return (
     <>
-      <Box pos="relative" w={400} h={405} style={{ flexShrink: 0, overflow: 'hidden' }}>
+      <Box pos="relative" w={400} style={{ flexShrink: 0, overflow: 'hidden', alignSelf: 'stretch' }}>
         <MediaItem
           item={items[current]}
-          height={405}
+          height="100%"
           onClick={() => setFullscreen(true)}
         />
         {showControls && <NavArrows onPrev={prev} onNext={next} />}

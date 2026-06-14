@@ -47,6 +47,12 @@ const ReviewCard = ({ review }: { review: IReview }) => {
         </Stack>
       </Flex>
 
+      {review.adName && (
+        <Text size="xs" c="dimmed" mt={6} mb={2}>
+          Объявление: {review.adName}
+        </Text>
+      )}
+
       <Text
         size="sm"
         c="dimmed"

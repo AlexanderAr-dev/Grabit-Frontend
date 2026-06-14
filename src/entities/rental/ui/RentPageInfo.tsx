@@ -48,7 +48,7 @@ export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps)
   return (
     <>
       <Flex
-        align="center"
+        align="stretch"
         direction="row"
         style={{ border: '1px solid gray', borderRadius: '10px', overflow: 'hidden' }}
       >
@@ -98,15 +98,6 @@ export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps)
               </Text>
             </Box>
           </Group>
-
-          {listing.category.name && (
-            <Box mb="md">
-              <Text fw={600} size="sm" mb={4}>Категория</Text>
-              <Badge variant="light" color="orange" size="sm">
-                {listing.category.name}
-              </Badge>
-            </Box>
-          )}
 
           {listing.quantity != null && listing.quantity > 1 && (
             <Box mb="md">
@@ -164,6 +155,14 @@ export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps)
             </Box>
             <Box w={400}>
               <Text size="xl" fw={600} mb={8}>Характеристики</Text>
+              {listing.category.name && (
+                <Group gap={6} wrap="nowrap">
+                  <Text size="sm" fw={600} style={{ whiteSpace: 'nowrap' }}>Категория:</Text>
+                  <Badge variant="light" color="orange" size="sm">
+                    {listing.category.name}
+                  </Badge>
+                </Group>
+              )}
             </Box>
           </Flex>
 
@@ -190,7 +189,9 @@ export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps)
               <BookingWidget
                 listingId={listing.id}
                 pricePerHour={listing.cost.payment}
-                maxQuantity={listing.quantity ?? 1}
+                bufferHours={listing.bufferHours}
+                availableFrom={listing.availableFrom}
+                availableUntil={listing.availableUntil}
               />
             </Box>
           )}

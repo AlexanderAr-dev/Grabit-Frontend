@@ -28,12 +28,13 @@ export interface BookingItem {
   start_time: string;
   end_time: string;
   status: BookingStatus;
-  cancelled_by?: 'owner' | 'renter' | 'system';
+  cancelled_by: 'owner' | 'renter' | 'system' | null;
   total_price: number;
   created_at: string;
   updated_at: string;
-  pending_extension?: BookingExtension;
+  pending_extension?: BookingExtension | null;
   renter_is_premium?: boolean;
+  has_my_review: boolean;
 }
 
 export type BookingResult = BookingItem;
@@ -44,11 +45,11 @@ export interface BookingListingInfo {
   owner_id: string;
   title: string;
   price_per_hour: number;
-  address?: string;
+  address: string | null;
   status: string;
   avg_rating: number;
   review_count: number;
-  cover_url?: string;
+  cover_url: string | null;
   owner_is_premium?: boolean;
 }
 
@@ -60,12 +61,13 @@ export interface BookingListItem {
   start_time: string;
   end_time: string;
   status: BookingStatus;
-  cancelled_by?: 'owner' | 'renter' | 'system';
+  cancelled_by: 'owner' | 'renter' | 'system' | null;
   total_price: number;
   created_at: string;
   updated_at: string;
   listing: BookingListingInfo;
   renter_is_premium?: boolean;
+  has_my_review: boolean;
 }
 
 interface BookingsListPage {

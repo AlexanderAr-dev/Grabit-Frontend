@@ -37,9 +37,10 @@ const SlideCard = ({ review }: { review: IReview }) => (
 
 interface ReviewsSliderProps {
   listingId: string;
+  excludeAuthorId?: string;
 }
 
-export const ReviewsSlider = ({ listingId }: ReviewsSliderProps) => {
+export const ReviewsSlider = ({ listingId, excludeAuthorId }: ReviewsSliderProps) => {
   const trackRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useQuery({
@@ -48,7 +49,7 @@ export const ReviewsSlider = ({ listingId }: ReviewsSliderProps) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const reviews = data?.items ?? [];
+  const reviews = (data?.items ?? []).filter(r => !excludeAuthorId || r.authorId !== excludeAuthorId);
 
   const scroll = (dir: 'left' | 'right') => {
     trackRef.current?.scrollBy({ left: dir === 'right' ? 296 : -296, behavior: 'smooth' });

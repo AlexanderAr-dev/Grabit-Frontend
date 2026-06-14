@@ -4,6 +4,7 @@ import { CardPreview, IRentalDetail, IRentalItem } from '../types';
 import {
   BackendCategory,
   BackendListing,
+  BackendListingSummary,
   BackendPaginatedResponse,
   mapListing,
   mapListingDetail,
@@ -54,12 +55,26 @@ interface ListingsParams {
   page?: number;
   page_size?: number;
   owner_id?: string;
+  lang?: string;
 }
 
 interface MyListingsParams {
   status?: string;
   page?: number;
   page_size?: number;
+  lang?: string;
+}
+
+interface CalendarDay {
+  date: string;
+  utilization: number | null;
+}
+
+export interface CalendarResponse {
+  listing_id: string;
+  year: number;
+  month: number;
+  days: CalendarDay[];
 }
 
 interface MediaResp {
@@ -93,7 +108,7 @@ export class rentService {
   }
 
   static async getRentList(params?: ListingsParams): Promise<{ items: IRentalItem[]; total: number }> {
-    const response = await api.get<{ data: BackendPaginatedResponse<BackendListing> }>('/rent/listings', { params });
+    const response = await api.get<{ data: BackendPaginatedResponse<BackendListingSummary> }>('/rent/listings', { params });
     const raw = response.data.data;
     return { items: raw.items.map(mapListing), total: raw.total };
   }
@@ -112,7 +127,7 @@ export class rentService {
   }
 
   static async getMyListings(params?: MyListingsParams): Promise<{ items: CardPreview[]; total: number }> {
-    const response = await api.get<{ data: BackendPaginatedResponse<BackendListing> }>('/rent/listings/my', { params });
+    const response = await api.get<{ data: BackendPaginatedResponse<BackendListingSummary> }>('/rent/listings/my', { params });
     const raw = response.data.data;
     return { items: raw.items.map(mapListingToCard), total: raw.total };
   }
@@ -120,6 +135,11 @@ export class rentService {
   static async getCategories(): Promise<BackendCategory[]> {
     const response = await api.get<{ data: { categories: BackendCategory[] } }>('/rent/categories');
     return response.data.data.categories;
+  }
+
+  static async getListingCalendar({ listingId, year, month }: { listingId: string; year: number; month: number }): Promise<CalendarResponse> {
+    const response = await api.get<{ data: CalendarResponse }>(`/rent/listings/${listingId}/calendar`, { params: { year, month } });
+    return response.data.data;
   }
 
   static async getAvailableSlots({ listingId, date }: { listingId: string; date: string }): Promise<{ available_hours: number[]; date: string }> {

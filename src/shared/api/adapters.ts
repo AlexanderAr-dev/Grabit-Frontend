@@ -7,26 +7,34 @@ export interface BackendMedia {
   sort_order: number;
 }
 
-export interface BackendListing {
+// Краткое представление из /rent/listings (search, my-listings)
+export interface BackendListingSummary {
   listing_id: string;
   owner_id: string;
   title: string;
-  description: string;
-  category: BackendCategory;
   price_per_hour: number;
-  quantity: number;
-  buffer_hours: number;
-  lat?: number;
-  lon?: number;
-  address?: string;
+  address: string | null;
+  lat: number | null;
+  lon: number | null;
   status: string;
   avg_rating: number;
   review_count: number;
-  media: BackendMedia[];
-  attributes: { key: string; value: string }[];
-  created_at: string;
-  updated_at: string;
   owner_is_premium?: boolean;
+  category?: BackendCategory;
+  available_from: string | null;
+  available_until: string | null;
+  media: BackendMedia[];
+  created_at: string;
+}
+
+// Полное представление из /rent/listings/{id}
+export interface BackendListing extends BackendListingSummary {
+  description: string;
+  category: BackendCategory;
+  quantity: number;
+  buffer_hours: number;
+  attributes: { key: string; value: string }[];
+  updated_at: string;
 }
 
 export interface BackendUserResponse {
@@ -80,11 +88,12 @@ export interface BackendPaginatedResponse<T> {
   page_size: number;
 }
 
-export function mapListing(b: BackendListing): IRentalItem {
+export function mapListing(b: BackendListingSummary): IRentalItem {
+  const full = b as BackendListing;
   return {
     id: b.listing_id,
     title: b.title,
-    description: b.description,
+    description: full.description,
     cost: { payment: b.price_per_hour, priceUnit: 'час' },
     category: { id: b.category?.id ?? 0, name: b.category?.name ?? null },
     productType: null,
@@ -93,11 +102,13 @@ export function mapListing(b: BackendListing): IRentalItem {
     reviewCount: b.review_count,
     previewImage: b.media[0] ? { id: 0, url: b.media[0].url } : undefined,
     createdDate: b.created_at,
-    quantity: b.quantity,
+    quantity: full.quantity,
     status: b.status,
-    lat: b.lat,
-    lon: b.lon,
+    lat: b.lat ?? undefined,
+    lon: b.lon ?? undefined,
     ownerIsPremium: b.owner_is_premium ?? false,
+    availableFrom: b.available_from,
+    availableUntil: b.available_until,
   };
 }
 
@@ -156,10 +167,12 @@ export function mapReview(b: BackendReview): IReview {
     text: b.comment,
     rating: b.rating,
     authorIsPremium: b.author_is_premium ?? false,
+    listingId: b.listing_id || undefined,
   };
 }
 
-export function mapListingToCard(b: BackendListing): CardPreview {
+export function mapListingToCard(b: BackendListingSummary): CardPreview {
+  const full = b as BackendListing;
   return {
     id: b.listing_id,
     title: b.title,
@@ -168,7 +181,7 @@ export function mapListingToCard(b: BackendListing): CardPreview {
     location: b.address ?? '',
     rating: b.avg_rating,
     reviewCount: b.review_count,
-    shortDescription: b.description,
+    shortDescription: full.description,
     createdAt: new Date(b.created_at).toLocaleDateString('ru-RU'),
     category: { id: b.category?.id ?? 0, name: b.category?.name ?? null },
     previewImage: b.media[0]?.url,
