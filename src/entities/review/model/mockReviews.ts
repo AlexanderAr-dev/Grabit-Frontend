@@ -3,6 +3,7 @@ import { IReview } from '@shared/types';
 export const mockReviews: IReview[] = [
   {
     id: '1',
+    authorId: '1',
     author: {
       id: 1,
       name: 'Андрей Плотников',
@@ -18,6 +19,7 @@ export const mockReviews: IReview[] = [
   },
   {
     id: '3',
+    authorId: '1',
     author: {
       id: 1,
       name: 'Андрей Плотников',
@@ -33,6 +35,7 @@ export const mockReviews: IReview[] = [
   },
   {
     id: '4',
+    authorId: '1',
     author: {
       id: 1,
       name: 'Андрей Плотников',

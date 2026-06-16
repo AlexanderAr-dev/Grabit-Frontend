@@ -148,7 +148,7 @@ export const RentedRentalsPage: FC = () => {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['booking-detail', id] });
       invalidateAll();
-      notifications.show({ title: 'Продление отклонено', color: 'orange' });
+      notifications.show({ title: 'Продление отклонено', message: '', color: 'orange' });
     },
   });
 
@@ -158,7 +158,7 @@ export const RentedRentalsPage: FC = () => {
     onSettled: () => setPendingNoShowId(null),
     onSuccess: () => {
       invalidateAll();
-      notifications.show({ title: 'Неявка отмечена', color: 'gray' });
+      notifications.show({ title: 'Неявка отмечена', message: '', color: 'gray' });
     },
     onError: (err: unknown) => {
       const status = (err as { response?: { status?: number } })?.response?.status;
@@ -310,7 +310,7 @@ export const RentedRentalsPage: FC = () => {
                     userIdToShow={
                       role === 'renter' ? booking.ownerIdForDisplay : booking.renter_id
                     }
-                    pendingExtension={pendingExtension}
+                    pendingExtension={pendingExtension ?? undefined}
                     hasReview={hasReview}
                     isLoading={pendingBookingId === booking.booking_id}
                     extensionLoading={pendingExtensionId === booking.booking_id}

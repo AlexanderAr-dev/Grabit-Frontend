@@ -78,7 +78,7 @@ const AvailabilityStep = ({ data, updateData, next, prev }: StepProps) => {
     return dayjs(date).isAfter(startDate, 'day') && dayjs(date).isBefore(endDate, 'day');
   };
 
-  const getDayProps = (type: 'start' | 'end') => (date: Date) => {
+  const getDayProps = (type: 'start' | 'end') => (date: string) => {
     const d = dayjs(date);
     const isPast = d.isBefore(today, 'day');
     const isToday = d.isSame(today, 'day');

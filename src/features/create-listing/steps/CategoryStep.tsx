@@ -49,7 +49,7 @@ const CategoryStep = ({ updateData, next, prev }: StepProps) => {
 
   const handleNext = () => {
     if (!level3) return;
-    updateData({ categoryId: level3.id });
+    updateData({ categoryId: level3.id as unknown as number });
     next?.();
   };
 

@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Group, NumberInput, Select } from '@mantine/core';
+import { Group, NumberInput } from '@mantine/core';
 
 import { CategoryTree } from './CategoryTree';
 
@@ -14,7 +14,6 @@ interface FilterBarProps {
 }
 
 export const RentalsCategories: FC<FilterBarProps> = ({
-  onSortChange,
   selectedCategoryId,
   onCategorySelect,
   minPrice,
@@ -22,12 +21,6 @@ export const RentalsCategories: FC<FilterBarProps> = ({
   onMinPriceChange,
   onMaxPriceChange,
 }) => {
-  const sortOptions = [
-    { value: 'date', label: 'Дата' },
-    { value: 'price_asc', label: 'Дешевле' },
-    { value: 'price_desc', label: 'Дороже' },
-    { value: 'popular', label: 'Популярное' },
-  ];
 
   return (
     <Group align="center" gap="sm" wrap="wrap" justify="center">

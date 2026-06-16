@@ -56,7 +56,7 @@ const ListingHeaderCard = ({ listingId }: { listingId: string }) => {
           <Group gap="md">
             <Text size="sm" fw={600}>{listing.cost.payment} ₽/{listing.cost.priceUnit}</Text>
             <Group gap={6}>
-              <Rating value={listing.rating} fractions={2} readOnly size="sm" />
+              <Rating value={listing.rating ?? undefined} fractions={2} readOnly size="sm" />
               <Text size="sm" c="dimmed">({listing.reviewCount})</Text>
             </Group>
           </Group>

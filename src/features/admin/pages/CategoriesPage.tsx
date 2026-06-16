@@ -210,9 +210,9 @@ export function CategoriesPage() {
       {/* Edit */}
       <Modal opened={editOpened} onClose={closeEdit} title="Переименовать категорию" centered>
         <form
-          onSubmit={editForm.onSubmit(values =>
-            editingCategory && editMutation.mutate({ id: editingCategory.id, values }),
-          )}
+          onSubmit={editForm.onSubmit(values => {
+            if (editingCategory) editMutation.mutate({ id: editingCategory.id, values });
+          })}
         >
           <Stack>
             <TextInput label="Название (RU)" required {...editForm.getInputProps('name_ru')} />

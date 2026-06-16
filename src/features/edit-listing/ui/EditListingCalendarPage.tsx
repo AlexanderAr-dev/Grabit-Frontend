@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Alert,
@@ -173,7 +173,7 @@ export const EditListingCalendarPage = () => {
     },
   };
 
-  const getDayPropsForRange = (type: 'start' | 'end') => (date: Date) => {
+  const getDayPropsForRange = (type: 'start' | 'end') => (date: string) => {
     const d = dayjs(date);
     const isPast = d.isBefore(today, 'day');
     const isToday = d.isSame(today, 'day');
