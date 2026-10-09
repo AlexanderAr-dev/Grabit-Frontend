@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Flex, Image, Loader, Slider, Text } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
+import { Box, Flex, Image, Loader, Slider, Text, useMantineColorScheme } from '@mantine/core';
+import { useDebouncedValue, useMediaQuery } from '@mantine/hooks';
 import { IconMapPin, IconPackage } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Map, Marker, Overlay } from 'pigeon-maps';
@@ -55,6 +55,9 @@ interface Props {
 
 export const MapSearchView = ({ filters }: Props) => {
   const navigate = useNavigate();
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+  const isMobile = useMediaQuery('(max-width: 576px)');
   const saved = useMemo(() => loadMapState(), []);
 
   const [center, setCenter] = useState<[number, number]>(saved.center ?? DEFAULT_CENTER);
@@ -64,7 +67,6 @@ export const MapSearchView = ({ filters }: Props) => {
   const [selectedId, setSelectedId] = useState<string | null>(saved.selectedId ?? null);
   const [address, setAddress] = useState<string | null>(null);
 
-  // Сохраняем состояние в sessionStorage при каждом изменении
   useEffect(() => {
     saveMapState({ center, zoom, clickedPoint, radiusSlider, selectedId });
   }, [center, zoom, clickedPoint, radiusSlider, selectedId]);
@@ -118,21 +120,25 @@ export const MapSearchView = ({ filters }: Props) => {
     setAddress(null);
   }, []);
 
+  const panelBg = isDark ? '#1E293B' : '#f8f9fa';
+  const panelBorder = isDark ? '#334155' : '#e9ecef';
+  const textDim = isDark ? '#94A3B8' : '#868e96';
+
   return (
     <Box>
       {/* Слайдер радиуса */}
       <Box
-        px={20}
+        px={isMobile ? 12 : 20}
         py={14}
         mb={12}
-        style={{ background: '#f8f9fa', borderRadius: 16, border: '1px solid #e9ecef' }}
+        style={{ background: panelBg, borderRadius: 16, border: `1px solid ${panelBorder}` }}
       >
-        <Flex align="center" gap={20} wrap="nowrap">
-          <Text size="sm" fw={600} style={{ whiteSpace: 'nowrap', minWidth: 140 }}>
-            Радиус поиска:{' '}
+        <Flex align="center" gap={isMobile ? 12 : 20} wrap={isMobile ? 'wrap' : 'nowrap'}>
+          <Text size="sm" fw={600} style={{ color: isDark ? '#F1F5F9' : '#1a1a2e', whiteSpace: 'nowrap' }}>
+            Радиус:{' '}
             <span style={{ color: '#FF8104', fontSize: 15 }}>{radiusKm} км</span>
           </Text>
-          <Box style={{ flex: 1 }}>
+          <Box style={{ flex: 1, minWidth: isMobile ? '100%' : 0 }}>
             <Slider
               value={radiusSlider}
               onChange={setRadiusSlider}
@@ -141,8 +147,8 @@ export const MapSearchView = ({ filters }: Props) => {
               color="#FF8104"
               size="md"
               styles={{
-                mark: { borderColor: '#dee2e6' },
-                markLabel: { fontSize: 12, color: '#868e96', marginTop: 6 },
+                mark: { borderColor: isDark ? '#475569' : '#dee2e6' },
+                markLabel: { fontSize: 12, color: textDim, marginTop: 6 },
                 thumb: { borderColor: '#FF8104', background: '#FF8104' },
               }}
             />
@@ -161,7 +167,7 @@ export const MapSearchView = ({ filters }: Props) => {
             {isLoading
               ? <Loader size={14} color="#FF8104" />
               : <Text size="sm" fw={500} c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                  — найдено: <span style={{ color: '#FF8104' }}>{withCoords.length}</span>
+                  — {withCoords.length} объявл.
                 </Text>
             }
           </>
@@ -169,19 +175,23 @@ export const MapSearchView = ({ filters }: Props) => {
       </Flex>
 
       {/* Карта */}
-      <Box style={{ height: 680, borderRadius: 16, overflow: 'hidden', position: 'relative', border: '1px solid #e9ecef' }}>
+      <Box style={{
+        height: isMobile ? 420 : 680,
+        borderRadius: 16,
+        overflow: 'hidden',
+        position: 'relative',
+        border: `1px solid ${panelBorder}`,
+      }}>
         <Map
           center={center}
           zoom={zoom}
           onBoundsChanged={({ center: c, zoom: z }) => { setCenter(c); setZoom(z); }}
           onClick={handleMapClick}
         >
-          {/* Маркер точки поиска */}
           {clickedPoint && (
             <Marker anchor={clickedPoint} width={42} color="#FF8104" />
           )}
 
-          {/* Balloon-метки */}
           {withCoords.map(listing => {
             const isSelected = listing.id === selectedId;
             const size = isSelected ? 44 : 36;
@@ -199,14 +209,13 @@ export const MapSearchView = ({ filters }: Props) => {
                     transition: 'transform 0.15s',
                   }}
                 >
-                  {/* Круглый пузырь */}
                   <Box
                     style={{
                       width: size,
                       height: size,
                       borderRadius: '50%',
                       background: color,
-                      border: `3px solid #fff`,
+                      border: '3px solid #fff',
                       boxShadow: isSelected
                         ? '0 4px 16px rgba(255,129,4,0.55)'
                         : '0 2px 8px rgba(0,0,0,0.25)',
@@ -218,7 +227,6 @@ export const MapSearchView = ({ filters }: Props) => {
                   >
                     <IconPackage size={isSelected ? 22 : 18} color="#fff" stroke={2} />
                   </Box>
-                  {/* Хвостик */}
                   <Box
                     style={{
                       width: 0,
@@ -234,26 +242,25 @@ export const MapSearchView = ({ filters }: Props) => {
             );
           })}
 
-          {/* Попап при клике на метку */}
           {selectedListing && (
             <Overlay anchor={[selectedListing.lat, selectedListing.lon]}>
               <Box
                 onClick={e => e.stopPropagation()}
                 style={{
                   transform: 'translate(-50%, calc(-100% - 52px))',
-                  background: '#fff',
+                  background: isDark ? '#1E293B' : '#fff',
                   borderRadius: 14,
                   boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-                  width: 240,
+                  width: isMobile ? 200 : 240,
                   overflow: 'hidden',
                   border: '2px solid #FF8104',
                 }}
               >
                 {selectedListing.previewImage && (
-                  <Image src={selectedListing.previewImage.url} h={130} fit="cover" />
+                  <Image src={selectedListing.previewImage.url} h={isMobile ? 100 : 130} fit="cover" />
                 )}
-                <Box p={12}>
-                  <Text size="sm" fw={700} lineClamp={2} mb={4} style={{ color: '#1a1a2e' }}>
+                <Box p={isMobile ? 8 : 12}>
+                  <Text size="sm" fw={700} lineClamp={2} mb={4} style={{ color: isDark ? '#F1F5F9' : '#1a1a2e' }}>
                     {selectedListing.title}
                   </Text>
                   {selectedListing.address && (
@@ -270,7 +277,7 @@ export const MapSearchView = ({ filters }: Props) => {
                         color: '#fff',
                         background: '#FF8104',
                         borderRadius: 8,
-                        padding: '4px 12px',
+                        padding: '4px 10px',
                         fontWeight: 600,
                         cursor: 'pointer',
                       }}
@@ -284,7 +291,6 @@ export const MapSearchView = ({ filters }: Props) => {
           )}
         </Map>
 
-        {/* Подсказка если точка не выбрана */}
         {!clickedPoint && (
           <Box
             style={{
@@ -295,19 +301,20 @@ export const MapSearchView = ({ filters }: Props) => {
               background: 'rgba(26,26,46,0.82)',
               color: '#fff',
               borderRadius: 24,
-              padding: '10px 22px',
-              fontSize: 14,
+              padding: isMobile ? '8px 16px' : '10px 22px',
+              fontSize: isMobile ? 13 : 14,
               fontWeight: 500,
               pointerEvents: 'none',
               backdropFilter: 'blur(6px)',
-              whiteSpace: 'nowrap',
+              whiteSpace: isMobile ? 'normal' : 'nowrap',
+              textAlign: 'center',
+              maxWidth: isMobile ? '80%' : undefined,
             }}
           >
-            Кликните на карту, чтобы выбрать точку поиска
+            {isMobile ? 'Нажмите на карту для поиска' : 'Кликните на карту, чтобы выбрать точку поиска'}
           </Box>
         )}
 
-        {/* Нет результатов с координатами */}
         {clickedPoint && !isLoading && listings.length > 0 && withCoords.length === 0 && (
           <Box
             style={{

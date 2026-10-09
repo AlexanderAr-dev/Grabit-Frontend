@@ -1,6 +1,7 @@
 import { FC, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  ActionIcon,
   Box,
   Container,
   Flex,
@@ -8,6 +9,8 @@ import {
   SimpleGrid,
   Text,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
+import { IconPlus } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { rentService } from '@shared/api';
@@ -23,6 +26,7 @@ const STATUS_OPTIONS = [
 
 export const HostedRentalsPage: FC = () => {
   const navigate = useNavigate();
+  const isMobile = useMediaQuery('(max-width: 576px)');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -42,9 +46,22 @@ export const HostedRentalsPage: FC = () => {
           value={search}
           onChange={e => setSearch(e.currentTarget.value)}
         />
-        <Button radius="lg" w={180} h={40} onClick={() => navigate('/create-listing')}>
-          Новое объявление
-        </Button>
+        {isMobile ? (
+          <ActionIcon
+            size={40}
+            radius="lg"
+            color="orange"
+            variant="filled"
+            onClick={() => navigate('/create-listing')}
+            style={{ flexShrink: 0 }}
+          >
+            <IconPlus size={20} />
+          </ActionIcon>
+        ) : (
+          <Button radius="lg" w={180} h={40} onClick={() => navigate('/create-listing')}>
+            Новое объявление
+          </Button>
+        )}
       </Flex>
 
       <Flex justify="center" pb={20}>

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { useState } from 'react';
-import { Box, Checkbox, Flex, Stack, Text, Title, useMantineColorScheme } from '@mantine/core';
+import { Box, Flex, Stack, Text, Title, useMantineColorScheme } from '@mantine/core';
 import { Calendar } from '@mantine/dates';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 
@@ -48,8 +48,8 @@ const calendarStyles = {
 const AvailabilityStep = ({ data, updateData, next, prev }: StepProps) => {
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
-  const borderColor = isDark ? '#2a2a2a' : '#e9ecef';
-  const cardBg = isDark ? '#1a1a1a' : '#fff';
+  const borderColor = isDark ? '#334155' : '#e9ecef';
+  const cardBg = isDark ? '#1E293B' : '#fff';
 
   const today = dayjs().startOf('day');
 
@@ -59,15 +59,12 @@ const AvailabilityStep = ({ data, updateData, next, prev }: StepProps) => {
   const [endDate, setEndDate] = useState<string | null>(
     data.booking?.availabilityRange?.end ?? null,
   );
-  const [autoRenewal, setAutoRenewal] = useState(data.booking?.autoRenewal ?? false);
-
   const handleNext = () => {
     if (!startDate || !endDate) return;
     updateData({
       booking: {
         ...data.booking,
         availabilityRange: { start: startDate, end: endDate },
-        autoRenewal,
       },
     });
     next?.();
@@ -190,13 +187,6 @@ const AvailabilityStep = ({ data, updateData, next, prev }: StepProps) => {
           </Box>
         </Stack>
       </Flex>
-
-      <Checkbox
-        label="Автообновление"
-        checked={autoRenewal}
-        onChange={e => setAutoRenewal(e.currentTarget.checked)}
-        color="#FF8104"
-      />
 
       <Flex gap="md" justify="space-between">
         <Button variant="secondary" onClick={prev}>Назад</Button>

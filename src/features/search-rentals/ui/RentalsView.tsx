@@ -1,18 +1,26 @@
-import { useMemo, useState } from 'react';
-import { Flex, Text, UnstyledButton } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
-import { IconList, IconMap } from '@tabler/icons-react';
+import { useState } from 'react';
+import { Box, Button, Flex, Text, useMantineColorScheme } from '@mantine/core';
+import { useDisclosure, useDebouncedValue, useMediaQuery } from '@mantine/hooks';
+import { IconAdjustments, IconList, IconMap } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { rentService } from '@shared/api';
+import { useCity } from '@shared/lib/cityContext';
 import { RentCardList } from '@widgets/rental-card-list';
+import { FilterDrawer } from './FilterDrawer';
 import { MapSearchView } from './MapSearchView';
 import { RentalsCategories } from './RentalsCategories';
 import { SearchInput } from './SearchInput';
 
 type ViewMode = 'list' | 'map';
+type SortValue = 'new' | 'old' | 'cheap' | 'expensive' | 'popular' | 'highRating' | 'lowRating';
 
 export const RentalsView = () => {
+  const isMobile = useMediaQuery('(max-width: 576px)');
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+
   const [mode, setMode] = useState<ViewMode>(() => {
     const saved = sessionStorage.getItem('rentals_view_mode');
     return saved === 'map' ? 'map' : 'list';
@@ -25,104 +33,144 @@ export const RentalsView = () => {
   const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
   const [debouncedMin] = useDebouncedValue(minPrice, 600);
   const [debouncedMax] = useDebouncedValue(maxPrice, 600);
+  const { city } = useCity();
+
+  const handleReset = () => {
+    setCategoryId(null);
+    setSortValue(null);
+    setMinPrice(undefined);
+    setMaxPrice(undefined);
+  };
+
+  const hasActiveFilters =
+    categoryId != null || sortValue != null || minPrice != null || maxPrice != null;
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['listings', searchValue, categoryId, debouncedMin, debouncedMax],
+    queryKey: ['listings', searchValue, categoryId, debouncedMin, debouncedMax, sortValue, city.key],
     queryFn: () =>
       rentService.getRentList({
         query: searchValue || undefined,
         category_id: categoryId ?? undefined,
         min_price: debouncedMin,
         max_price: debouncedMax,
+        sort: (sortValue as SortValue) ?? undefined,
+        lat: city.lat,
+        lon: city.lon,
+        radius_km: city.radius_km,
         page: 1,
         page_size: 50,
       }),
     enabled: mode === 'list',
   });
 
-  const sortedItems = useMemo(() => {
-    if (!data?.items) return [];
-    let items = [...data.items];
-
-    if (sortValue) {
-      switch (sortValue) {
-        case 'date':
-          items.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
-          break;
-        case 'price_asc':
-          items.sort((a, b) => a.cost.payment - b.cost.payment);
-          break;
-        case 'price_desc':
-          items.sort((a, b) => b.cost.payment - a.cost.payment);
-          break;
-        case 'popular':
-          items.sort((a, b) => (b.reviewCount ?? 0) - (a.reviewCount ?? 0));
-          break;
-      }
-    }
-
-    return items;
-  }, [data, sortValue]);
-
   return (
     <>
       <Flex gap="md" justify="center" align="center" direction="column">
-        <Flex gap={12} align="center" style={{ width: '100%', maxWidth: 640 }}>
-          <SearchInput
-            value={inputValue}
-            onChange={event => setInputValue(event.currentTarget.value)}
-            onKeyDown={event => {
-              if (event.key === 'Enter') {
-                setSearchValue(inputValue);
-              }
-            }}
-          />
-          {/* Переключатель режима */}
-          <Flex
-            style={{
-              flexShrink: 0,
-              border: '1.5px solid #e9ecef',
-              borderRadius: 10,
-              overflow: 'hidden',
-              background: '#f8f9fa',
-            }}
-          >
-            {(['list', 'map'] as ViewMode[]).map((m, i) => (
-              <UnstyledButton
-                key={m}
-                onClick={() => { setMode(m); sessionStorage.setItem('rentals_view_mode', m); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '8px 14px',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: mode === m ? '#fff' : '#495057',
-                  background: mode === m ? '#FF8104' : 'transparent',
-                  borderRight: i === 0 ? '1.5px solid #e9ecef' : undefined,
-                  transition: 'background 0.15s, color 0.15s',
-                  cursor: 'pointer',
+        {/* Поисковая строка */}
+        {isMobile ? (
+          /* На мобильном: поиск на всю ширину + кнопка фильтров */
+          <Flex gap={8} align="center" style={{ width: '100%' }}>
+            <Box style={{ flex: 1 }}>
+              <SearchInput
+                value={inputValue}
+                onChange={event => setInputValue(event.currentTarget.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') setSearchValue(inputValue);
                 }}
-              >
-                {m === 'list' ? <IconList size={15} /> : <IconMap size={15} />}
-                {m === 'list' ? 'Список' : 'На карте'}
-              </UnstyledButton>
-            ))}
+                w="100%"
+              />
+            </Box>
+            <Button
+              onClick={openDrawer}
+              radius="xl"
+              variant={hasActiveFilters ? 'filled' : 'default'}
+              color={hasActiveFilters ? 'orange' : undefined}
+              px={14}
+              style={{ flexShrink: 0, height: 46 }}
+              leftSection={<IconAdjustments size={18} />}
+            >
+              {hasActiveFilters ? 'Фильтры •' : 'Фильтры'}
+            </Button>
           </Flex>
-        </Flex>
-        <RentalsCategories
-          onSortChange={setSortValue}
-          selectedCategoryId={categoryId}
-          onCategorySelect={setCategoryId}
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          onMinPriceChange={setMinPrice}
-          onMaxPriceChange={setMaxPrice}
-        />
+        ) : (
+          /* На десктопе: поиск + переключатель Список/Карта */
+          <Flex gap={12} align="center" style={{ width: '100%', maxWidth: 640 }}>
+            <SearchInput
+              value={inputValue}
+              onChange={event => setInputValue(event.currentTarget.value)}
+              onKeyDown={event => {
+                if (event.key === 'Enter') setSearchValue(inputValue);
+              }}
+            />
+            <Flex
+              style={{
+                flexShrink: 0,
+                border: `1.5px solid ${isDark ? '#334155' : '#e9ecef'}`,
+                borderRadius: 10,
+                overflow: 'hidden',
+                background: isDark ? '#1E293B' : '#f8f9fa',
+              }}
+            >
+              {(['list', 'map'] as ViewMode[]).map((m, i) => (
+                <button
+                  key={m}
+                  onClick={() => { setMode(m); sessionStorage.setItem('rentals_view_mode', m); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 14px',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: mode === m ? '#fff' : isDark ? '#94A3B8' : '#495057',
+                    background: mode === m ? '#FF8104' : 'transparent',
+                    borderRight: i === 0 ? `1.5px solid ${isDark ? '#334155' : '#e9ecef'}` : undefined,
+                    border: 'none',
+                    transition: 'background 0.15s, color 0.15s',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {m === 'list' ? <IconList size={15} /> : <IconMap size={15} />}
+                  {m === 'list' ? 'Список' : 'На карте'}
+                </button>
+              ))}
+            </Flex>
+          </Flex>
+        )}
+
+        {/* Фильтры — только на десктопе */}
+        {!isMobile && (
+          <RentalsCategories
+            onSortChange={setSortValue}
+            sortValue={sortValue}
+            selectedCategoryId={categoryId}
+            onCategorySelect={setCategoryId}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            onMinPriceChange={setMinPrice}
+            onMaxPriceChange={setMaxPrice}
+          />
+        )}
       </Flex>
 
-      <div style={{ padding: 20, minHeight: '100vh' }}>
+      {/* Дровер с фильтрами для мобильного */}
+      <FilterDrawer
+        opened={drawerOpened}
+        onClose={closeDrawer}
+        mode={mode}
+        onModeChange={m => { setMode(m); closeDrawer(); }}
+        sortValue={sortValue}
+        onSortChange={setSortValue}
+        selectedCategoryId={categoryId}
+        onCategorySelect={setCategoryId}
+        minPrice={minPrice}
+        maxPrice={maxPrice}
+        onMinPriceChange={setMinPrice}
+        onMaxPriceChange={setMaxPrice}
+        onReset={handleReset}
+      />
+
+      <div style={{ padding: isMobile ? '16px 0' : 20, minHeight: '100vh' }}>
         {mode === 'map' && (
           <MapSearchView
             filters={{ categoryId, minPrice: debouncedMin, maxPrice: debouncedMax }}
@@ -136,7 +184,7 @@ export const RentalsView = () => {
                 <Text c="dimmed">Не удалось загрузить объявления. Проверьте подключение к серверу.</Text>
               </Flex>
             )}
-            {!isError && <RentCardList items={sortedItems} isLoading={isLoading} />}
+            {!isError && <RentCardList items={data?.items ?? []} isLoading={isLoading} />}
           </>
         )}
       </div>

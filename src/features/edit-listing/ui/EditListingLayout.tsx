@@ -34,8 +34,8 @@ export const EditListingLayout = ({ children }: EditListingLayoutProps) => {
     borderRadius: 8,
     cursor: 'pointer',
     fontWeight: active ? 600 : 400,
-    backgroundColor: active ? '#FF8104' : isDark ? '#2a2a2a' : '#f1f3f5',
-    color: active ? '#fff' : isDark ? '#ccc' : '#555',
+    backgroundColor: active ? '#FF8104' : isDark ? '#1E293B' : '#f1f3f5',
+    color: active ? '#fff' : isDark ? '#94A3B8' : '#555',
     border: 'none',
     fontSize: 14,
     transition: 'all 0.15s',
@@ -72,8 +72,8 @@ export const EditListingLayout = ({ children }: EditListingLayoutProps) => {
         p="xl"
         style={{
           borderRadius: 16,
-          border: `1px solid ${isDark ? '#333' : '#e9ecef'}`,
-          backgroundColor: isDark ? '#1a1a1a' : '#fff',
+          border: `1px solid ${isDark ? '#334155' : '#e9ecef'}`,
+          backgroundColor: isDark ? '#1E293B' : '#fff',
         }}
       >
         {children}

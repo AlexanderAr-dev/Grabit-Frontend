@@ -91,7 +91,7 @@ export const RentPage = () => {
         afterCard={isOwner ? (
           <>
             <Flex justify="center" mt={20} mb={4}>
-              <Paper withBorder p="md" style={{ width: 832, borderRadius: 12 }}>
+              <Paper withBorder p="md" style={{ width: '100%', maxWidth: 832, borderRadius: 12 }}>
                 <Text fw={600} size="md" mb={12}>Управление объявлением</Text>
                 <Flex gap="md" align="center">
                   {status === 'active' && (
@@ -152,7 +152,7 @@ export const RentPage = () => {
       />
 
       <Flex justify="center" mb={30}>
-        <Box style={{ width: 832 }}>
+        <Box style={{ width: '100%', maxWidth: 832 }}>
           <Text size="xl" fw={600} mb={8}>Расположение</Text>
           {listing.address && (
             <Group gap={6} mb={12}>

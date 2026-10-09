@@ -9,6 +9,7 @@ interface AuthContextType {
   wasUnauthorized: boolean;
   login: () => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

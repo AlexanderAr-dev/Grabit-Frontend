@@ -43,7 +43,7 @@ export const BookingCalendar = ({ booking }: Props) => {
   })();
 
   const bgAvailable = isDark ? '#1a4a1a' : '#e6f7e6';
-  const bgUnavailable = isDark ? '#2a2a2a' : '#f1f3f5';
+  const bgUnavailable = isDark ? '#1E293B' : '#f1f3f5';
   const bgSelected = '#FF8104';
   const textAvailable = isDark ? '#6fcf6f' : '#2d862d';
   const textToday = '#FF8104';
@@ -160,8 +160,8 @@ export const BookingCalendar = ({ booking }: Props) => {
           p="md"
           style={{
             borderRadius: 12,
-            border: `1px solid ${isDark ? '#333' : '#e9ecef'}`,
-            backgroundColor: isDark ? '#1a1a1a' : '#f8f9fa',
+            border: `1px solid ${isDark ? '#334155' : '#e9ecef'}`,
+            backgroundColor: isDark ? '#1E293B' : '#f8f9fa',
           }}
         >
           <Text fw={600} mb="sm">

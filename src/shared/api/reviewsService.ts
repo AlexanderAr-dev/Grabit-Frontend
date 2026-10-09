@@ -7,11 +7,23 @@ export interface ReviewsPage {
   total: number;
 }
 
+export type ReviewSort = 'new' | 'old' | 'high' | 'low';
+
+interface GetReviewsParams {
+  page?: number;
+  pageSize?: number;
+  sort?: ReviewSort;
+  rating?: number[];
+}
+
 export class reviewsService {
-  static async getReviewsByRentalId(listingId: string, page = 1, pageSize = 20): Promise<ReviewsPage> {
+  static async getReviewsByRentalId(
+    listingId: string,
+    { page = 1, pageSize = 20, sort, rating }: GetReviewsParams = {},
+  ): Promise<ReviewsPage> {
     const response = await api.get<{ data: BackendPaginatedResponse<BackendReview> }>(
       `/rent/listings/${listingId}/reviews`,
-      { params: { page, page_size: pageSize } },
+      { params: { page, page_size: pageSize, sort, rating } },
     );
     return {
       items: response.data.data.items.map(mapReview),
@@ -19,10 +31,13 @@ export class reviewsService {
     };
   }
 
-  static async getReviewsByUserId(userId: string, page = 1, pageSize = 20): Promise<ReviewsPage> {
+  static async getReviewsByUserId(
+    userId: string,
+    { page = 1, pageSize = 20, sort, rating }: GetReviewsParams = {},
+  ): Promise<ReviewsPage> {
     const response = await api.get<{ data: BackendPaginatedResponse<BackendReview> }>(
       `/rent/users/${userId}/reviews`,
-      { params: { page, page_size: pageSize } },
+      { params: { page, page_size: pageSize, sort, rating } },
     );
     return {
       items: response.data.data.items.map(mapReview),

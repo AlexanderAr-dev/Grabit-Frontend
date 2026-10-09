@@ -79,7 +79,6 @@ export const EditListingCalendarPage = () => {
 
   const [startDate, setStartDate] = useState<string | null>(saved.startDate ?? null);
   const [endDate, setEndDate] = useState<string | null>(saved.endDate ?? null);
-  const [autoRenewal, setAutoRenewal] = useState(false);
   const [enabledDays, setEnabledDays] = useState<WeekDay[]>(saved.enabledDays ?? []);
   const [schedule, setSchedule] = useState<Record<WeekDay, boolean[]>>(
     saved.schedule ?? emptySchedule(),
@@ -131,8 +130,8 @@ export const EditListingCalendarPage = () => {
     return dayjs(date).isAfter(startDate, 'day') && dayjs(date).isBefore(endDate, 'day');
   };
 
-  const borderColor = isDark ? '#2a2a2a' : '#e9ecef';
-  const cardBg = isDark ? '#1a1a1a' : '#fff';
+  const borderColor = isDark ? '#334155' : '#e9ecef';
+  const cardBg = isDark ? '#1E293B' : '#fff';
   const today = dayjs().startOf('day');
 
   const calendarStyles = {
@@ -295,12 +294,6 @@ export const EditListingCalendarPage = () => {
             </Stack>
           </Flex>
 
-          <Checkbox
-            label="Автообновление"
-            checked={autoRenewal}
-            onChange={e => setAutoRenewal(e.currentTarget.checked)}
-            color="#FF8104"
-          />
         </Stack>
 
         <Stack gap="sm">
@@ -355,9 +348,9 @@ export const EditListingCalendarPage = () => {
                             borderRadius: 6,
                             textAlign: 'center',
                             cursor: 'pointer',
-                            border: `1px solid ${active ? accent : isDark ? '#444' : '#ddd'}`,
-                            backgroundColor: active ? `${accent}22` : isDark ? '#2a2a2a' : '#f8f9fa',
-                            color: active ? accent : isDark ? '#aaa' : '#555',
+                            border: `1px solid ${active ? accent : isDark ? '#334155' : '#ddd'}`,
+                            backgroundColor: active ? `${accent}22` : isDark ? '#1E293B' : '#f8f9fa',
+                            color: active ? accent : isDark ? '#94A3B8' : '#555',
                             fontSize: 12,
                             fontWeight: active ? 600 : 400,
                             userSelect: 'none',

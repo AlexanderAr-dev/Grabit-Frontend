@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { ActionIcon, Box, Group, Image, Modal } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
 
 import { IMediaType } from '@shared/types';
+
+const MOBILE_HEIGHT = 260;
+const DESKTOP_WIDTH = 400;
 
 interface MediaGalleryProps {
   media: IMediaType[];
@@ -11,13 +15,23 @@ interface MediaGalleryProps {
 const isVideoItem = (item: IMediaType) =>
   item.mediaType?.startsWith('video') || /\.(mp4|webm|mov)(\?|$)/i.test(item.url);
 
-function MediaItem({ item, height, onClick }: { item: IMediaType; height: number | string; onClick?: () => void }) {
+function MediaItem({
+  item,
+  height,
+  fit = 'cover',
+  onClick,
+}: {
+  item: IMediaType;
+  height: number | string;
+  fit?: 'cover' | 'contain';
+  onClick?: () => void;
+}) {
   if (isVideoItem(item)) {
     return (
       <video
         src={item.url}
         controls
-        style={{ width: '100%', height, objectFit: 'contain', borderRadius: 10, display: 'block' }}
+        style={{ width: '100%', height, objectFit: fit, borderRadius: 10, display: 'block' }}
       />
     );
   }
@@ -26,7 +40,7 @@ function MediaItem({ item, height, onClick }: { item: IMediaType; height: number
       src={item.url}
       h={height}
       w="100%"
-      style={{ objectFit: 'cover', cursor: onClick ? 'zoom-in' : undefined, display: 'block', height: '100%' }}
+      style={{ objectFit: fit, cursor: onClick ? 'zoom-in' : undefined, display: 'block' }}
       fallbackSrc="https://via.placeholder.com/400"
       onClick={onClick}
     />
@@ -101,6 +115,7 @@ function DotsIndicator({
 export const MediaGallery = ({ media }: MediaGalleryProps) => {
   const [current, setCurrent] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 576px)');
 
   const items = media.length > 0 ? media : [{ id: 0, url: 'https://via.placeholder.com/400' }];
   const showControls = items.length > 1;
@@ -110,10 +125,22 @@ export const MediaGallery = ({ media }: MediaGalleryProps) => {
 
   return (
     <>
-      <Box pos="relative" w={400} style={{ flexShrink: 0, overflow: 'hidden', alignSelf: 'stretch' }}>
+      <Box
+        pos="relative"
+        style={{
+          flexShrink: 0,
+          overflow: 'hidden',
+          // На мобильном: полная ширина, фиксированная высота (не прыгает при загрузке)
+          // На десктопе: фиксированная ширина, высота растягивается по соседней карточке
+          width: isMobile ? '100%' : DESKTOP_WIDTH,
+          height: isMobile ? MOBILE_HEIGHT : undefined,
+          alignSelf: isMobile ? undefined : 'stretch',
+          background: 'var(--mantine-color-default)',
+        }}
+      >
         <MediaItem
           item={items[current]}
-          height="100%"
+          height={isMobile ? MOBILE_HEIGHT : '100%'}
           onClick={() => setFullscreen(true)}
         />
         {showControls && <NavArrows onPrev={prev} onNext={next} />}
@@ -126,12 +153,13 @@ export const MediaGallery = ({ media }: MediaGalleryProps) => {
         opened={fullscreen}
         onClose={() => setFullscreen(false)}
         size="xl"
+        fullScreen={!!isMobile}
         centered
         withCloseButton={false}
         padding={0}
-        styles={{ body: { padding: 0, position: 'relative' } }}
+        styles={{ body: { padding: 0, position: 'relative', height: isMobile ? '100%' : undefined } }}
       >
-        <Box pos="relative" style={{ minHeight: 300 }}>
+        <Box pos="relative" style={{ minHeight: isMobile ? '100%' : 300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
           <ActionIcon
             pos="absolute"
             top={8}
@@ -144,7 +172,7 @@ export const MediaGallery = ({ media }: MediaGalleryProps) => {
             <IconX size={18} />
           </ActionIcon>
 
-          <MediaItem item={items[current]} height="75vh" />
+          <MediaItem item={items[current]} height={isMobile ? '90dvh' : '75vh'} fit="contain" />
 
           {showControls && <NavArrows onPrev={prev} onNext={next} />}
           {showControls && (

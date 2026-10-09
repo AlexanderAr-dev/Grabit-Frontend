@@ -2,20 +2,25 @@ import { ReactNode, useState } from 'react';
 import {
   Badge,
   Box,
+  Button as MantineButton,
   Card,
   Flex,
   Group,
+  Popover,
   Rating,
   SimpleGrid,
+  Stack,
   Text,
 } from '@mantine/core';
-import { IconMapPin, IconMessageCircle } from '@tabler/icons-react';
+import { useMediaQuery } from '@mantine/hooks';
+import { IconLogin, IconMapPin, IconMessageCircle } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
 import { chatService } from '@shared/api';
 import { IRentalDetail } from '@shared/types';
 import { Button, MissingField } from '@shared/ui';
 import { UserMiniCard } from '@entities/user';
+import { useAuth } from '@features/auth';
 import { BookingWidget } from './BookingWidget';
 import { MediaGallery } from './MediaGallery';
 
@@ -27,9 +32,16 @@ interface RentPageViewProps {
 
 export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps) => {
   const navigate = useNavigate();
+  const isMobile = useMediaQuery('(max-width: 576px)');
   const [chatLoading, setChatLoading] = useState(false);
+  const [loginPopoverOpen, setLoginPopoverOpen] = useState(false);
+  const { isAuthenticated, login } = useAuth();
 
   const handleWriteToOwner = async () => {
+    if (!isAuthenticated) {
+      setLoginPopoverOpen(true);
+      return;
+    }
     setChatLoading(true);
     try {
       const conversation = await chatService.createOrGetConversation(listing.id);
@@ -49,16 +61,20 @@ export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps)
     <>
       <Flex
         align="stretch"
-        direction="row"
-        style={{ border: '1px solid gray', borderRadius: '10px', overflow: 'hidden' }}
+        direction={isMobile ? 'column' : 'row'}
+        style={{
+          border: isMobile ? 'none' : '1px solid var(--mantine-color-default-border)',
+          borderRadius: isMobile ? 0 : '10px',
+          overflow: 'hidden',
+          background: 'var(--mantine-color-default)',
+        }}
       >
         <MediaGallery media={media} />
 
         <Card
           padding="lg"
-          radius="md"
-          style={{ maxWidth: 400, fontFamily: 'sans-serif', flex: 1 }}
-          bdrs={0}
+          radius={0}
+          style={{ maxWidth: isMobile ? '100%' : 400, fontFamily: 'sans-serif', flex: 1 }}
         >
           <Text size="sm" c="dimmed" mb="md">
             {new Date(listing.createdDate).toLocaleDateString('ru-RU')}
@@ -128,16 +144,42 @@ export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps)
           </Box>
 
           {!isOwner && (
-            <Button
-              fullWidth
-              variant="primary"
-              leftSection={<IconMessageCircle size={18} />}
-              radius="md"
-              loading={chatLoading}
-              onClick={handleWriteToOwner}
+            <Popover
+              opened={loginPopoverOpen}
+              onClose={() => setLoginPopoverOpen(false)}
+              position="top"
+              withArrow
+              shadow="md"
+              width={240}
             >
-              Написать
-            </Button>
+              <Popover.Target>
+                <Button
+                  fullWidth
+                  variant="primary"
+                  leftSection={<IconMessageCircle size={18} />}
+                  radius="md"
+                  loading={chatLoading}
+                  onClick={handleWriteToOwner}
+                >
+                  Написать
+                </Button>
+              </Popover.Target>
+              <Popover.Dropdown>
+                <Stack gap="sm">
+                  <Text size="sm">Войдите в аккаунт, чтобы написать продавцу</Text>
+                  <MantineButton
+                    fullWidth
+                    size="sm"
+                    color="orange"
+                    radius="md"
+                    leftSection={<IconLogin size={16} />}
+                    onClick={() => { setLoginPopoverOpen(false); login(); }}
+                  >
+                    Войти
+                  </MantineButton>
+                </Stack>
+              </Popover.Dropdown>
+            </Popover>
           )}
         </Card>
       </Flex>
@@ -145,15 +187,15 @@ export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps)
       {afterCard}
 
       <Flex justify="center" mt={20}>
-        <Box style={{ width: 832 }}>
-          <Flex gap="xl" mb={30}>
-            <Box w={400}>
+        <Box style={{ width: '100%', maxWidth: 832 }}>
+          <Flex gap="xl" mb={30} direction={isMobile ? 'column' : 'row'}>
+            <Box style={{ flex: 1 }}>
               <Text size="xl" fw={600} mb={8}>Описание</Text>
               <Text size="sm" style={{ lineHeight: 1.6 }}>
                 {listing.description || 'Нет описания'}
               </Text>
             </Box>
-            <Box w={400}>
+            <Box style={{ flex: 1 }}>
               <Text size="xl" fw={600} mb={8}>Характеристики</Text>
               {listing.category.name && (
                 <Group gap={6} wrap="nowrap">
@@ -169,7 +211,7 @@ export const RentPageInfo = ({ listing, isOwner, afterCard }: RentPageViewProps)
           {listing.attributes && listing.attributes.length > 0 && (
             <Box mb={30}>
               <Text size="xl" fw={600} mb={12}>Параметры</Text>
-              <SimpleGrid cols={2} spacing="xs">
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
                 {listing.attributes.map((attr, i) => (
                   <Group key={i} gap={6} wrap="nowrap">
                     <Text size="sm" fw={600} style={{ whiteSpace: 'nowrap' }}>

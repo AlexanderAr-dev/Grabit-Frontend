@@ -109,9 +109,10 @@ export const BookingWidget = ({ listingId, pricePerHour, bufferHours, availableF
     [isMultiDay, endSlotsData, startAvailableHours],
   );
 
-  // Варианты конечного часа для однодневного бронирования (непрерывная цепочка)
-  // Учитывает bufferHours: новое бронирование должно заканчиваться не позднее чем
-  // за bufferHours до ближайшего занятого слота (бекенд это не проверяет при создании)
+  // Варианты конечного часа для однодневного бронирования (непрерывная цепочка).
+  // Буфер: аренда должна заканчиваться не позже, чем за bufferHours до начала
+  // следующего занятого слота. Буфер нужен владельцу для проверки предмета.
+  // Пример: следующая аренда в 19:00, буфер 1 ч → максимальный конец = 18:00.
   const { options: sameDayEndOptions, bufferApplied: endBufferApplied } = useMemo(() => {
     if (isMultiDay || startHour === null) return { options: [], bufferApplied: false };
 
@@ -121,20 +122,11 @@ export const BookingWidget = ({ listingId, pricePerHour, bufferHours, availableF
       if (!startAvailableHours.has(h)) { firstUnavailable = h; break; }
     }
 
-    // Есть ли доступные часы после заблокированной зоны?
-    // Если да — это занятый слот (бронирование + буфер), а не просто конец расписания
-    let hasAvailableAfterBlocked = false;
-    if (firstUnavailable !== null) {
-      for (let h = firstUnavailable + 1; h <= 23; h++) {
-        if (startAvailableHours.has(h)) { hasAvailableAfterBlocked = true; break; }
-      }
-    }
-
     const buf = bufferHours ?? 0;
-    const bufferApplied = hasAvailableAfterBlocked && buf > 0;
-    const maxEnd = firstUnavailable !== null && bufferApplied
-      ? firstUnavailable - buf
-      : firstUnavailable ?? 24;
+    // Всегда вычитаем буфер от первого занятого слота:
+    // конец_аренды + буфер ≤ начало_следующей → конец_аренды ≤ firstUnavailable - buf
+    const maxEnd = firstUnavailable !== null ? firstUnavailable - buf : 24;
+    const bufferApplied = firstUnavailable !== null && buf > 0;
 
     const options: number[] = [];
     for (let h = startHour + 1; h <= 23; h++) {
@@ -204,15 +196,15 @@ export const BookingWidget = ({ listingId, pricePerHour, bufferHours, availableF
   };
 
   const getUtilizationBg = (utilization: number | null): string => {
-    if (utilization === null) return isDark ? '#2a2a2a' : '#e8e8e8';
+    if (utilization === null) return isDark ? '#2C3853' : '#e8e8e8';
     const hue = Math.round((1 - utilization / 100) * 120);
     return `hsl(${hue}, ${isDark ? 55 : 65}%, ${isDark ? 30 : 88}%)`;
   };
 
-  const cardBg = isDark ? '#1a1a1a' : '#fff';
-  const borderColor = isDark ? '#2a2a2a' : '#e9ecef';
-  const bgSlot = isDark ? '#1a3a1a' : '#e8f5e9';
-  const bgSlotUnavailable = isDark ? '#3a1a1a' : '#fff0f0';
+  const cardBg = isDark ? '#1E293B' : '#fff';
+  const borderColor = isDark ? '#334155' : '#e9ecef';
+  const bgSlot = isDark ? '#1a3a2a' : '#e8f5e9';
+  const bgSlotUnavailable = isDark ? '#3a1e2a' : '#fff0f0';
   const textSlot = isDark ? '#81c784' : '#2e7d32';
   const textUnavail = isDark ? '#e57373' : '#c62828';
 
@@ -292,7 +284,7 @@ export const BookingWidget = ({ listingId, pricePerHour, bufferHours, availableF
         <Flex align="center" gap={6} px={2}>
           <IconClock size={14} color="#868e96" />
           <Text size="xs" c="dimmed">
-            Буфер между арендами: <b>{bufferHours} ч</b> — время на подготовку предмета
+            Перерыв <b>{bufferHours} ч</b> на проверку и передачу предмета — учитывается при выборе времени окончания
           </Text>
         </Flex>
       )}
@@ -412,7 +404,7 @@ export const BookingWidget = ({ listingId, pricePerHour, bufferHours, availableF
           {sameDayEndOptions.length === 0 ? (
             <Text size="sm" c="dimmed">
               {endBufferApplied
-                ? `Нет доступных часов — слишком близко к следующему бронированию (буфер: ${bufferHours} ч). Попробуйте выбрать более раннее время начала.`
+                ? `Нет вариантов — выбранное время начала слишком близко к следующей аренде. С учётом перерыва ${bufferHours} ч на проверку попробуйте начать раньше.`
                 : 'Нет доступных часов для продолжения'}
             </Text>
           ) : (
@@ -458,7 +450,7 @@ export const BookingWidget = ({ listingId, pricePerHour, bufferHours, availableF
 
       {/* Итог */}
       {durationHours > 0 && (
-        <Box p="sm" style={{ borderRadius: 12, backgroundColor: isDark ? '#1a1a1a' : '#f8f9fa', border: `1px solid ${borderColor}` }}>
+        <Box p="sm" style={{ borderRadius: 12, backgroundColor: isDark ? '#1E293B' : '#f8f9fa', border: `1px solid ${borderColor}` }}>
           <Group justify="space-between">
             <Text size="sm" c="dimmed">
               {formatDuration(durationHours)} × {pricePerHour} ₽/ч

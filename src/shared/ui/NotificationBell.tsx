@@ -56,7 +56,7 @@ export const NotificationBell = () => {
   const { data: notifications, isLoading } = useQuery({
     queryKey: ['notifications', 'list'],
     queryFn: () => notificationsService.getNotifications({ pageSize: 20 }),
-    enabled: opened,
+    enabled: opened && isAuthenticated,
     staleTime: 0,
   });
 
@@ -103,7 +103,7 @@ export const NotificationBell = () => {
         </Tooltip>
       </Popover.Target>
 
-      <Popover.Dropdown p={0} onMouseDown={e => e.stopPropagation()}>
+      <Popover.Dropdown p={0} onMouseDown={e => e.stopPropagation()} style={{ backgroundColor: 'var(--mantine-color-default)', border: '1px solid var(--mantine-color-default-border)' }}>
         <Group justify="space-between" px={16} py={10} style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
           <Text fw={600} size="sm">Уведомления</Text>
           {hasUnread && (
@@ -120,19 +120,25 @@ export const NotificationBell = () => {
         </Group>
 
         <ScrollArea h={360}>
-          {isLoading && (
+          {!isAuthenticated && (
+            <Text size="sm" c="dimmed" ta="center" py={32} px={16}>
+              Войдите в аккаунт, чтобы видеть уведомления
+            </Text>
+          )}
+
+          {isAuthenticated && isLoading && (
             <Text size="sm" c="dimmed" ta="center" py={32}>
               Загрузка...
             </Text>
           )}
 
-          {!isLoading && !notifications?.items.length && (
+          {isAuthenticated && !isLoading && !notifications?.items.length && (
             <Text size="sm" c="dimmed" ta="center" py={32}>
               Уведомлений нет
             </Text>
           )}
 
-          {notifications?.items.map(n => {
+          {isAuthenticated && notifications?.items.map(n => {
             const hasTarget = !!getBookingNavTarget(n);
             return (
               <Box

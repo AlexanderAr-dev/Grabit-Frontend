@@ -42,6 +42,18 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
 }
 
+function formatSystemContent(content: string): string {
+  return content.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/g, iso =>
+    new Date(iso).toLocaleString('ru', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+  );
+}
+
 const SystemMessage: FC<{ content: string; secondaryText: string }> = ({ content, secondaryText }) => (
   <Group justify="center" my="xs">
     <Text size="xs" c={secondaryText} ta="center" style={{ maxWidth: '80%' }}>
@@ -55,16 +67,17 @@ const MessageBubble: FC<{
   isMine: boolean;
   variantStyles: { text: string; secondaryText: string; backgroundColor: string };
   isDark: boolean;
+  isMobile?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
-}> = ({ message, isMine, variantStyles, isDark, onEdit, onDelete }) => {
+}> = ({ message, isMine, variantStyles, isDark, isMobile, onEdit, onDelete }) => {
   const [hovered, setHovered] = useState(false);
 
   if (message.message_type === 1) {
-    return <SystemMessage content={message.content} secondaryText={variantStyles.secondaryText} />;
+    return <SystemMessage content={formatSystemContent(message.content)} secondaryText={variantStyles.secondaryText} />;
   }
 
-  const bubbleBg = isMine ? '#FF8104' : isDark ? '#374151' : '#F1F3F5';
+  const bubbleBg = isMine ? '#FF8104' : isDark ? '#2C3853' : '#F1F3F5';
   const bubbleText = isMine ? '#FFFFFF' : variantStyles.text;
   const canAct = isMine && !message.is_deleted;
 
@@ -84,7 +97,7 @@ const MessageBubble: FC<{
               variant="subtle"
               color="gray"
               size="sm"
-              style={{ opacity: hovered ? 1 : 0, transition: 'opacity 0.15s', flexShrink: 0 }}
+              style={{ opacity: (hovered || isMobile) ? 1 : 0, transition: 'opacity 0.15s', flexShrink: 0 }}
             >
               <IconDotsVertical size={14} />
             </ActionIcon>
@@ -141,7 +154,7 @@ const ListingCard: FC<{
         padding: '12px 16px',
         border: `1px solid ${variantStyles.borderColor}`,
         borderRadius: 12,
-        backgroundColor: isDark ? '#111827' : '#F9FAFB',
+        backgroundColor: isDark ? '#1E293B' : '#F9FAFB',
         cursor: 'pointer',
         transition: 'background-color 0.15s',
       }}
@@ -185,7 +198,7 @@ export const ChatPage: FC = () => {
   const isDark = colorScheme === 'dark';
   const isMobile = useMediaQuery('(max-width: 768px)');
   const variantStyles = componentsTheme.cardTheme[colorScheme].primary;
-  const headerBg = isDark ? '#1F2937' : '#F8F9FA';
+  const headerBg = isDark ? '#1E293B' : '#F8F9FA';
 
   // Prefer conversation from router state; fall back to fetching the list (e.g. direct URL access)
   const stateConversation = (location.state as { conversation?: ConversationResp } | null)?.conversation;
@@ -411,6 +424,12 @@ export const ChatPage: FC = () => {
           : 'calc(100dvh - var(--app-shell-header-height, 60px) - var(--app-shell-padding, 16px) * 2)',
         display: 'flex',
         flexDirection: 'column',
+        /* Выходим за пределы Container (px=12) на мобильном для полной ширины */
+        ...(isMobile ? {
+          marginLeft: -12,
+          marginRight: -12,
+          width: 'calc(100% + 24px)',
+        } : {}),
       }}
     >
       {/* ── Listing card — отдельный блок над чатом ── */}
@@ -430,8 +449,8 @@ export const ChatPage: FC = () => {
           minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: 12,
-          border: `1px solid ${variantStyles.borderColor}`,
+          borderRadius: isMobile ? 0 : 12,
+          border: isMobile ? 'none' : `1px solid ${variantStyles.borderColor}`,
           backgroundColor: variantStyles.backgroundColor,
           overflow: 'hidden',
         }}
@@ -540,13 +559,14 @@ export const ChatPage: FC = () => {
                   isMine={msg.sender_id === user?.id}
                   variantStyles={variantStyles}
                   isDark={isDark}
+                  isMobile={isMobile}
                   onEdit={() => handleStartEdit(msg)}
                   onDelete={() => handleDelete(msg)}
                 />
               ))}
               {peerIsTyping && (
                 <Group justify="flex-start" mb="xs">
-                  <Paper p="sm" radius="lg" style={{ backgroundColor: isDark ? '#374151' : '#F1F3F5' }}>
+                  <Paper p="sm" radius="lg" style={{ backgroundColor: isDark ? '#2C3853' : '#F1F3F5' }}>
                     <Text size="sm" c={variantStyles.secondaryText}>печатает...</Text>
                   </Paper>
                 </Group>
@@ -575,7 +595,7 @@ export const ChatPage: FC = () => {
           ) : (
             <Stack gap="xs">
               {editingMessage && (
-                <Group gap="xs" align="center" style={{ padding: '4px 8px', borderRadius: 8, backgroundColor: isDark ? '#374151' : '#E9ECEF' }}>
+                <Group gap="xs" align="center" style={{ padding: '4px 8px', borderRadius: 8, backgroundColor: isDark ? '#2C3853' : '#E9ECEF' }}>
                   <IconEdit size={14} color="#FF8104" />
                   <Text size="xs" c={variantStyles.secondaryText} style={{ flex: 1 }} truncate>
                     Редактирование: {editingMessage.content}
@@ -598,7 +618,7 @@ export const ChatPage: FC = () => {
                   radius="xl"
                   styles={{
                     input: {
-                      backgroundColor: isDark ? '#374151' : '#F1F3F5',
+                      backgroundColor: isDark ? '#2C3853' : '#F1F3F5',
                       border: 'none',
                       color: variantStyles.text,
                       resize: 'none',

@@ -10,6 +10,7 @@ import {
   Text,
   useMantineColorScheme,
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 
 import { componentsTheme } from '@shared/config';
 import { CardPreview } from '@shared/types';
@@ -42,6 +43,7 @@ export const MediumCard: FC<CardProps> = ({
   ownerIsPremium,
 }) => {
   const { colorScheme } = useMantineColorScheme();
+  const isMobile = useMediaQuery('(max-width: 576px)');
   const themeStyles = componentsTheme.cardTheme[colorScheme];
   const variantStyles = themeStyles[variant];
   const dim = colorScheme === 'dark' ? 'gray.4' : 'gray.6';
@@ -60,13 +62,13 @@ export const MediumCard: FC<CardProps> = ({
         border: `1px solid ${colorScheme === 'dark' ? '#1E293B' : '#E2E8F0'}`,
       }}
     >
-      <Flex direction="row" gap="md">
+      <Flex direction={isMobile ? 'column' : 'row'} gap="md">
         <Image
           src={previewImage}
           radius="md"
           alt={title}
-          h={230}
-          w={230}
+          h={isMobile ? 180 : 230}
+          w={isMobile ? '100%' : 230}
           fit="cover"
           style={{ flexShrink: 0 }}
         />
@@ -105,7 +107,7 @@ export const MediumCard: FC<CardProps> = ({
             за {priceUnit}
           </Text>
 
-          <Group justify="space-between" align="center" wrap="nowrap">
+          <Group justify="space-between" align="center" wrap="wrap">
             <Text size="sm" c={dim}>{location}</Text>
             <Group gap={4} wrap="nowrap">
               <Rating value={rating} readOnly size="sm" />

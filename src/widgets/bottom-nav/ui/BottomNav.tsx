@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Indicator, Text, UnstyledButton, useMantineColorScheme } from '@mantine/core';
+import { Box, Text, UnstyledButton, useMantineColorScheme } from '@mantine/core';
 import { IconShieldFilled } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -37,8 +37,9 @@ export const BottomNav = () => {
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 100,
-        height: 60,
+        zIndex: 200,
+        height: 'calc(60px + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         display: 'flex',
         alignItems: 'stretch',
         backgroundColor: bg,
@@ -65,16 +66,33 @@ export const BottomNav = () => {
               paddingBottom: 4,
             }}
           >
-            <Indicator
-              inline
-              disabled={!isChat || chatUnread === 0}
-              label={chatUnread > 99 ? '99+' : chatUnread}
-              size={16}
-              color="red"
-              offset={2}
-            >
+            <Box pos="relative" style={{ width: 22, height: 22 }}>
               <Icon size={22} color={color} />
-            </Indicator>
+              {isChat && chatUnread > 0 && (
+                <Box
+                  pos="absolute"
+                  style={{
+                    top: 6,
+                    right: -8,
+                    minWidth: 14,
+                    height: 14,
+                    borderRadius: 7,
+                    background: '#e5383b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    color: '#fff',
+                    padding: '0 3px',
+                    lineHeight: 1,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {chatUnread > 99 ? '99+' : chatUnread}
+                </Box>
+              )}
+            </Box>
             <Text size="xs" fw={isActive ? 600 : 400} style={{ color, lineHeight: 1 }}>
               {item.title}
             </Text>

@@ -28,3 +28,10 @@ dist-ssr
 
 # Envs
 .env
+# Build artifacts
+dist.zip
+*.tsbuildinfo
+
+# Env files (keep example)
+.env.*
+!.env.example

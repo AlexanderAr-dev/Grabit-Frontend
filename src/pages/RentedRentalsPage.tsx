@@ -1,6 +1,7 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Center, SegmentedControl, Stack, Text } from '@mantine/core';
+import { Box, Center, SegmentedControl, Select, Stack, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -55,6 +56,7 @@ export const RentedRentalsPage: FC = () => {
   const [pendingExtensionId, setPendingExtensionId] = useState<string | null>(null);
   const [pendingNoShowId, setPendingNoShowId] = useState<string | null>(null);
 
+  const isMobile = useMediaQuery('(max-width: 576px)');
   const highlightRef = useRef<HTMLDivElement>(null);
   const [highlightActive, setHighlightActive] = useState(!!highlightBookingId);
 
@@ -225,7 +227,7 @@ export const RentedRentalsPage: FC = () => {
         }));
 
   return (
-    <div style={{ padding: '40px', minHeight: '100vh' }}>
+    <Box px={{ base: 0, sm: 40 }} py={24} style={{ minHeight: '100vh' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <SegmentedControl
           value={role}
@@ -241,14 +243,25 @@ export const RentedRentalsPage: FC = () => {
           fullWidth
         />
 
-        <SegmentedControl
-          value={statusFilter}
-          onChange={v => setStatusFilter(v as StatusFilter)}
-          data={STATUS_FILTER_OPTIONS}
-          mb={24}
-          fullWidth
-          size="xs"
-        />
+        {/* На мобильном — Select вместо SegmentedControl */}
+        {isMobile ? (
+          <Select
+            value={statusFilter}
+            onChange={v => v && setStatusFilter(v as StatusFilter)}
+            data={STATUS_FILTER_OPTIONS}
+            mb={24}
+            radius="md"
+          />
+        ) : (
+          <SegmentedControl
+            value={statusFilter}
+            onChange={v => setStatusFilter(v as StatusFilter)}
+            data={STATUS_FILTER_OPTIONS}
+            mb={24}
+            fullWidth
+            size="xs"
+          />
+        )}
 
         {isLoading && (
           <Stack gap="md">
@@ -377,6 +390,6 @@ export const RentedRentalsPage: FC = () => {
           onSuccess={handleReviewSuccess}
         />
       )}
-    </div>
+    </Box>
   );
 };

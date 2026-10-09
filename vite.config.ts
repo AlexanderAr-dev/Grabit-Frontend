@@ -15,6 +15,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'robots.txt'],
       manifest: false,
+      workbox: {
+        navigateFallbackDenylist: [/^\/api\//],
+      },
     }),
   ],
   resolve: {

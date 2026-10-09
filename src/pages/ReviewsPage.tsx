@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import {
   Box,
   Card,
+  Chip,
   Container,
   Flex,
   Group,
   Image,
   Loader,
   Rating,
+  Select,
   Stack,
   Text,
   Title,
@@ -19,7 +21,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ReviewsList, ReviewsSlider } from '@entities/review';
 import { UserMiniCard } from '@entities/user';
 import { rentService, reviewsService } from '@shared/api';
+import { ReviewSort } from '@shared/api/reviewsService';
 import { IReview } from '@shared/types';
+
+const SORT_OPTIONS = [
+  { value: 'new', label: 'Сначала новые' },
+  { value: 'old', label: 'Сначала старые' },
+  { value: 'high', label: 'Высокий рейтинг' },
+  { value: 'low', label: 'Низкий рейтинг' },
+];
 
 const UserHeaderCard = ({ userId }: { userId: string }) => (
   <Card shadow="sm" padding="lg" radius="md" withBorder mb="xl">
@@ -68,15 +78,24 @@ const ListingHeaderCard = ({ listingId }: { listingId: string }) => {
 
 const PAGE_SIZE = 20;
 
-// Страница отзывов по листингу — пагинация как раньше
 const ListingReviewsPage = ({ listingId }: { listingId: string }) => {
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<ReviewSort>('new');
+  const [ratingFilter, setRatingFilter] = useState<string[]>([]);
   const [allReviews, setAllReviews] = useState<IReview[]>([]);
   const [total, setTotal] = useState(0);
 
+  const ratingNumbers = ratingFilter.map(Number);
+
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['reviews', 'listing', listingId, page],
-    queryFn: () => reviewsService.getReviewsByRentalId(listingId, page, PAGE_SIZE),
+    queryKey: ['reviews', 'listing', listingId, page, sort, ratingFilter],
+    queryFn: () =>
+      reviewsService.getReviewsByRentalId(listingId, {
+        page,
+        pageSize: PAGE_SIZE,
+        sort,
+        rating: ratingNumbers.length ? ratingNumbers : undefined,
+      }),
   });
 
   useEffect(() => {
@@ -85,27 +104,56 @@ const ListingReviewsPage = ({ listingId }: { listingId: string }) => {
     setTotal(data.total);
   }, [data, page]);
 
+  const resetAndApply = (newSort: ReviewSort, newRating: string[]) => {
+    setSort(newSort);
+    setRatingFilter(newRating);
+    setPage(1);
+    setAllReviews([]);
+  };
+
   const hasMore = allReviews.length < total;
 
-  if (isLoading && page === 1) {
-    return <Flex justify="center" py="xl"><Loader color="#FF8104" /></Flex>;
-  }
-
-  if (allReviews.length === 0) {
-    return <Text c="dimmed" ta="center" py="xl">Отзывов пока нет.</Text>;
-  }
-
   return (
-    <ReviewsList
-      reviews={allReviews}
-      hasMore={hasMore}
-      isLoading={isFetching}
-      onShowAll={() => setPage(prev => prev + 1)}
-    />
+    <Stack gap="md">
+      <Group gap="sm" wrap="wrap">
+        <Select
+          data={SORT_OPTIONS}
+          value={sort}
+          onChange={v => resetAndApply((v as ReviewSort) ?? 'new', ratingFilter)}
+          radius="lg"
+          w={180}
+        />
+        <Chip.Group
+          multiple
+          value={ratingFilter}
+          onChange={v => resetAndApply(sort, v)}
+        >
+          <Group gap={6}>
+            {[5, 4, 3, 2, 1].map(r => (
+              <Chip key={r} value={String(r)} radius="xl" size="sm" color="orange">
+                {'★'.repeat(r)}
+              </Chip>
+            ))}
+          </Group>
+        </Chip.Group>
+      </Group>
+
+      {isLoading && page === 1 ? (
+        <Flex justify="center" py="xl"><Loader color="#FF8104" /></Flex>
+      ) : allReviews.length === 0 ? (
+        <Text c="dimmed" ta="center" py="xl">Отзывов пока нет.</Text>
+      ) : (
+        <ReviewsList
+          reviews={allReviews}
+          hasMore={hasMore}
+          isLoading={isFetching}
+          onShowAll={() => setPage(prev => prev + 1)}
+        />
+      )}
+    </Stack>
   );
 };
 
-// Страница отзывов по пользователю — листинги с отзывами, как в публичном профиле
 const UserReviewsPage = ({ userId }: { userId: string }) => {
   const navigate = useNavigate();
 

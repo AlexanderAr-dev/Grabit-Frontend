@@ -37,7 +37,6 @@ export const EditListingInfoPage = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [pricePerHour, setPricePerHour] = useState<number | string>('');
-  const [quantity, setQuantity] = useState<number | string>(1);
   const [characteristics, setCharacteristics] = useState<Characteristic[]>([]);
   const [charLabel, setCharLabel] = useState('');
   const [charValue, setCharValue] = useState('');
@@ -53,7 +52,6 @@ export const EditListingInfoPage = () => {
       setTitle(listing.title ?? '');
       setDescription(listing.description ?? '');
       setPricePerHour(listing.cost.payment ?? '');
-      setQuantity(listing.quantity ?? 1);
       setCharacteristics(
         (listing.attributes ?? []).map(a => ({ label: a.key, value: a.value })),
       );
@@ -71,7 +69,7 @@ export const EditListingInfoPage = () => {
         title,
         description,
         price_per_hour: Number(pricePerHour),
-        quantity: Number(quantity) || 1,
+        quantity: 1,
         attributes: characteristics.map(c => ({ key: c.label, value: c.value })),
         category_id: listing?.category.id,
         address: listing?.address || undefined,
@@ -158,15 +156,6 @@ export const EditListingInfoPage = () => {
           w={200}
         />
 
-        <NumberInput
-          label="Количество единиц"
-          description="Сколько экземпляров доступно для аренды одновременно"
-          min={1}
-          value={quantity}
-          onChange={setQuantity}
-          w={200}
-        />
-
         <Divider mt="sm" />
         {id && (
           <EditMediaSection
@@ -215,8 +204,8 @@ export const EditListingInfoPage = () => {
                 py={8}
                 style={{
                   borderRadius: 8,
-                  border: `1px solid ${isDark ? '#333' : '#e9ecef'}`,
-                  background: isDark ? '#2a2a2a' : '#f8f9fa',
+                  border: `1px solid ${isDark ? '#334155' : '#e9ecef'}`,
+                  background: isDark ? '#1E293B' : '#f8f9fa',
                 }}
               >
                 <Text size="sm">

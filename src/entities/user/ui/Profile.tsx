@@ -15,7 +15,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import {
   IconCamera,
   IconCrown,
@@ -57,6 +57,7 @@ export const Profile = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isMobile = useMediaQuery('(max-width: 576px)');
   const [opened, { open, close }] = useDisclosure(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -208,7 +209,7 @@ export const Profile = () => {
         <Divider my="lg" />
 
         <Grid gutter="md" mb="lg">
-          <Grid.Col span={4}>
+          <Grid.Col span={{ base: 12, sm: 4 }}>
             <Card
               shadow="sm"
               padding="md"
@@ -226,7 +227,7 @@ export const Profile = () => {
               </Group>
             </Card>
           </Grid.Col>
-          <Grid.Col span={4}>
+          <Grid.Col span={{ base: 12, sm: 4 }}>
             <Card shadow="sm" padding="md" radius="md" withBorder>
               <Group>
                 <IconStar size={24} color="#FF8104" />
@@ -243,7 +244,7 @@ export const Profile = () => {
               </Group>
             </Card>
           </Grid.Col>
-          <Grid.Col span={4}>
+          <Grid.Col span={{ base: 12, sm: 4 }}>
             <Card
               shadow="sm"
               padding="md"
@@ -349,7 +350,7 @@ export const Profile = () => {
         )}
       </Container>
 
-      <Modal opened={opened} onClose={close} title="Редактировать профиль" size="md">
+      <Modal opened={opened} onClose={close} title="Редактировать профиль" size="md" fullScreen={!!isMobile}>
         <Stack gap="md">
           <TextInput
             label="Имя"

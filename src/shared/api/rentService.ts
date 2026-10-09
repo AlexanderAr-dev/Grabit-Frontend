@@ -56,6 +56,7 @@ interface ListingsParams {
   page_size?: number;
   owner_id?: string;
   lang?: string;
+  sort?: 'new' | 'old' | 'cheap' | 'expensive' | 'popular' | 'highRating' | 'lowRating';
 }
 
 interface MyListingsParams {

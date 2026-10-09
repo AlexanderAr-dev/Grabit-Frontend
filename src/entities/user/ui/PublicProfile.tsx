@@ -67,14 +67,14 @@ const ListingRow = ({ listing }: { listing: IRentalItem }) => {
         style={{ borderColor: '#e2e8f0', cursor: 'pointer' }}
         onClick={() => navigate(`/rent-page/${listing.id}`)}
       >
-        <Flex gap="lg" align="center">
+        <Flex gap="lg" align="center" direction={{ base: 'column', sm: 'row' }}>
           <Image
             src={listing.previewImage?.url || '/placeholder.jpg'}
             fallbackSrc="/placeholder.jpg"
             width={120}
             height={90}
             radius="md"
-            style={{ objectFit: 'cover', width: 120, height: 90, flexShrink: 0 }}
+            style={{ objectFit: 'cover', width: '100%', maxWidth: 120, height: 90, flexShrink: 0 }}
           />
           <Box style={{ flex: 1, minWidth: 0 }}>
             <Group justify="space-between" align="flex-start" wrap="nowrap">
@@ -135,7 +135,7 @@ export const PublicProfile = ({ userId }: PublicProfileProps) => {
 
   const { data: reviewsData, isFetching: reviewsFetching } = useQuery({
     queryKey: ['userReviews', userId, pageSize],
-    queryFn: () => reviewsService.getReviewsByUserId(userId, 1, pageSize),
+    queryFn: () => reviewsService.getReviewsByUserId(userId, { page: 1, pageSize }),
     enabled: !!userId,
   });
 
@@ -195,7 +195,7 @@ export const PublicProfile = ({ userId }: PublicProfileProps) => {
 
       {/* Шапка профиля */}
       <Card shadow="sm" padding="lg" radius="lg" withBorder mb="xl" style={{ borderColor: '#e2e8f0' }}>
-        <Flex justify="space-between" align="flex-start" gap="md">
+        <Flex justify="space-between" align="flex-start" gap="md" wrap="wrap">
           <Box style={{ flex: 1 }}>
             <Group gap={8} align="center" wrap="nowrap" mb={4}>
               <Title order={2} style={{ margin: 0 }}>{profile.name || profile.username}</Title>

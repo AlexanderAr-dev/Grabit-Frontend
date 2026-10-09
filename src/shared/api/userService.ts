@@ -35,6 +35,15 @@ interface BackendPublicProfile {
   is_premium?: boolean;
 }
 
+export interface CompleteProfileData {
+  username: string;
+  first_name: string;
+  last_name: string;
+  birth_date?: string;
+  gender?: string;
+  phone?: string;
+}
+
 export interface UpdateProfileData {
   first_name?: string;
   last_name?: string;
@@ -53,8 +62,13 @@ export class UserService {
     return adapted;
   }
 
+  static async completeProfile(data: CompleteProfileData): Promise<IUserInfo> {
+    const response = await api.post<{ data: BackendUserResponse }>('/users/me/profile/complete', data);
+    return mapUser(response.data.data);
+  }
+
   static async updateProfile(data: UpdateProfileData): Promise<IUserInfo> {
-    const response = await api.patch<{ data: BackendUserResponse }>('/users/me', data);
+    const response = await api.put<{ data: BackendUserResponse }>('/users/me/profile', data);
     return mapUser(response.data.data);
   }
 

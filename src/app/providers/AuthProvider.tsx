@@ -41,6 +41,15 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
   }, [queryClient]);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await UserService.infoUser();
+      setUser(res.data.data);
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
   const login = useCallback(() => {
     window.location.href = AuthService.getSsoLoginUrl();
   }, []);
@@ -61,7 +70,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   }, [queryClient]);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, wasUnauthorized, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, wasUnauthorized, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
