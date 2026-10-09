@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: {
     host: '0.0.0.0',
     port: 5173,
@@ -12,11 +12,15 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // В демо-режиме service worker занят MSW — два воркера на одном scope не уживаются
+      disable: mode === 'demo',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'robots.txt'],
       manifest: false,
       workbox: {
         navigateFallbackDenylist: [/^\/api\//],
+        // Файлы демо-режима не нужны в кэше продакшн-PWA
+        globIgnores: ['**/mockServiceWorker.js', 'demo/**'],
       },
     }),
   ],
@@ -30,4 +34,4 @@ export default defineConfig({
       '@shared': '/src/shared',
     },
   },
-});
+}));
